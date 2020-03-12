@@ -1,0 +1,51 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+output Int : Current value
+
+<Description>
+Knob.
+If you select combination button, rotation of the knob is counted only while the specified button is pressed.
+NOTE:
+When UseCombination = false, and more than one of buttons are pushed, rotation is not counted.
+
+<Parameter>
+parameter Knob = ["KNOB_L", "KNOB_R"] : Target knob
+parameter Min = 0 : Min value
+parameter Max = 127 : Max value
+parameter Initial = 0 : Initial value
+parameter UseCombination = false : Use combination button or not
+parameter Combination = ["BUTTON_A", "BUTTON_B", "BUTTON_L", "BUTTON_R", "BUTTON_BACK"] : Button to use in combination with the knob
+
+<Setup>
+Midiglue::attach(Midiglue::${Knob}, ${this}, 0, Midiglue::DataCategory::Logic);
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static Int min = ${Min};
+static Int max = ${Max};
+static Int val = ${Initial};
+
+if (@knob){
+    bool is_active = false;
+    if (${UseCombination}){
+        if (Midiglue::is_combination_pushed(Midiglue::Buttons::${Combination})){
+            is_active = true;
+        }
+    }else{
+        if (!Midiglue::is_any_button_pushed()){
+            is_active = true;
+        }
+    }
+    if (is_active){
+        Int diff = (Int)*(Int*)(_data);
+        val += diff;
+        val = std::min(std::max(val,min),max);
+        out0 = val;
+    }
+}else if (@setup){
+    out0 = val;
+}
+

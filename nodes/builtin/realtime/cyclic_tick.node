@@ -1,0 +1,31 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set interval in tick and reschedule
+output Int : Bang output
+
+<Description>
+Output bang repeatedly.
+Interval is specified in ticks (480 ticks are equivalent to 1 quarter note).
+To use this node, master tempo must be set up with tempo_bpm or tempo_ext node!!!
+
+<Parameter>
+parameter Interval = 480 : interval (tick)
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static auto cb = [&](){
+    out0 = Midiglue::__bang;
+};
+static auto event = Midiglue::make_cyclic_tick_event<>(cb);
+
+if (@in0){
+    event->schedule(in0);
+}else if (@setup){
+    event->schedule(${Interval});
+}
+

@@ -1,0 +1,34 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Trigger output
+output MidiSysEx : Output
+
+<Description>
+Construct MIDI System Exclusive Message.
+Message must contain the initial 0xF0 and the last 0xF7 byte!!!
+Otherwise no SysEx message is sent out.
+
+<Parameter>
+parameter Message = "0xF0, 0xF7" : Comma-separated list of message bytes including F0 and F7
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static const std::vector<uint8_t> message{${Message}};
+static MidiSysEx sysex;
+
+if (@in0){
+    if (sysex.buf) {
+        out0 = sysex;
+    }
+}else if (@setup){
+    size_t size = message.size();
+    if (size <= Midiglue::SYSEX_MAX_LENGTH && message.at(0) == 0xf0 && message.at(size-1) == 0xf7) {
+        sysex.len = size;
+        sysex.buf = message.data();
+    }
+}

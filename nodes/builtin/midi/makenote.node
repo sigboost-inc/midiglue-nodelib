@@ -1,0 +1,45 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set note number & trigger output
+input Int : Set velocity
+input Int : Set MIDI Channel
+input Int : Set Duration (millisec)
+output MidiPacket : MIDI packets
+
+<Description>
+Assemble the MIDI Note packets form note number, velocity and channel.
+After sending Note On, it will automatically issue Note Off after a set time.
+
+<Parameter>
+parameter Velocity = 60 : Default velocity
+parameter Channel = 1 : Default MIDI channel
+parameter Duration = 500 : Default note duration (millisec)
+parameter MaxNotes = 32 : Max number of simultaneously played notes
+
+<Code>
+static Int velocity = ${Velocity};
+static Int midich = ${Channel};
+static Int duration = ${Duration};
+static auto cb = [&](Int pitch){
+    auto packet = MidiPacket::makeNoteOff(midich, pitch);
+    out0 = packet;
+};
+static auto event = Midiglue::make_multi_us_event<${MaxNotes}, Int>(cb);
+
+if (@in0) {
+    // send noteon first
+    auto packet = MidiPacket::makeNoteOn(midich, in0, velocity);
+    out0 = packet;
+    // schedule noteoff
+    event->schedule(duration*1000, in0);
+}else if (@in1){
+    velocity = in1;
+}else if (@in2){
+    midich = in2;
+}else if (@in3){
+    duration = in3;
+}
+

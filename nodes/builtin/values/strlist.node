@@ -1,0 +1,25 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Select index and output an element
+input Any : Trigger output list
+output String : Element output
+output StringList : List output
+
+<Description>
+list of string.
+
+<Parameter>
+parameter List = "" : C++ style initializer lists (except "{}")
+
+<Code>
+static StringList list = Midiglue::make_list<String>({${List}});
+if (@in0){
+    if (in0 < list->size()){
+        out0 = list->at(in0);
+    }
+}else if (@in1){
+    out1 = list;
+}

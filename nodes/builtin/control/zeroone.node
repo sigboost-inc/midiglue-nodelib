@@ -1,0 +1,23 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : 0 or 1
+output Int : Mapped number
+
+<Description>
+Map 0 and 1 to any output.
+
+<Parameter>
+parameter Zero = 0 : Map from 0
+parameter One = 2 : Map from 1
+
+<Code>
+if (@in0){
+    if (in0 == 0){
+        out0 = ${Zero};
+    }else if (in0 == 1){
+        out0 = ${One};
+    }
+}

@@ -1,0 +1,31 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI input, track NoteOn and Pedal
+input Any : Reset. Send NoteOff corresponding to tracked NoteOn
+output MidiPacket : Pass through
+
+<Description>
+Track NoteOn and send the corresponding NoteOff when reset.
+If you want to change the MIDI transmission destination while playing, use this node and reset it BEFORE changing the parameter.
+NOTE:
+Tracks the holded note, Consumes up to 2KB of RAM.
+
+<Code>
+
+static std::function<void(Midiglue::MidiPacket&)> release = [&](Midiglue::MidiPacket& packet){
+    out0 = packet;
+};
+
+static ActiveNoteTracker tracker;
+if (@in0){
+    if (Midiglue::is_valid(in0)){
+        tracker.track_packet(in0);
+        out0 = in0;
+    }
+}else if (@in1){
+    tracker.release_all(release);
+}
+

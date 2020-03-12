@@ -1,0 +1,32 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input String : Value
+
+<Description>
+Display a string.
+The sum of the number of characters of parameter name and value is 10 ( if position is Left or Right) or 21 (if position is Full)
+
+<Parameter>
+parameter Name = "param" : Parameter name
+parameter Line = ["0", "1", "2", "3"] : Display line
+parameter FontSize = ["1"] : Font size
+parameter Position = ["Left", "Right", "Full"] : Display position
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+constexpr Int index = ${Line}*2 + (ParameterPosition::${Position}==ParameterPosition::Right ? 1 : 0);
+static String str = Midiglue::make_string("");
+if (@in0){
+    if (Midiglue::is_valid(in0)) {
+        str = in0;
+        Midiglue::update_param( index, str );
+    }
+}else if (@setup){
+    Midiglue::register_param<String>("${Name}", ${Line}, ${FontSize}, ParameterPosition::${Position});
+    Midiglue::update_param( index, str );
+}

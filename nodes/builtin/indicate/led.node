@@ -1,0 +1,52 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Trigger pulse
+input Int : Zero:Off, Other:On
+input Int : Set color White(0)/Red(1)/Green(2)/Blue(3)
+
+
+<Description>
+Light the main LED.
+Left input : Trigger pulse.
+Middle input : Set zero to turn the LED off, otherwise turn it on.
+Right input : Set color White(0)/Red(1)/Green(2)/Blue(3).
+NOTE:
+White light is the combination of red, green and blue LEDs.
+If the white LED is turned off, the LED completely turns off.
+
+<Parameter>
+parameter Color = ["White", "Red", "Green", "Blue"] : Default color
+
+<Requirements>
+require MAIN_LED_Output
+
+<Code>
+static Int color = Midiglue::${Color};
+static Int status = 0;
+static auto timeout_cbf = [&]{
+    status = 0;
+    Midiglue::write(Midiglue::MAIN_LED, color, &status, sizeof(Int), Midiglue::DataCategory::Logic);
+};
+static auto event = Midiglue::make_oneshot_us_event<>(timeout_cbf);
+if (@in0){
+    status = 1;
+    Midiglue::write(Midiglue::MAIN_LED, color, &status, sizeof(Int), Midiglue::DataCategory::Logic);
+    event->schedule(20000);
+}else if (@in1){
+    status = in1;
+    Midiglue::write(Midiglue::MAIN_LED, color, &status, sizeof(Int), Midiglue::DataCategory::Logic);
+}else if (@in2){
+    if (in2 >= 0 && in2 <= 3){
+        if (status){
+            Int ZERO = 0;
+            Midiglue::write(Midiglue::MAIN_LED, color, &ZERO, sizeof(Int), Midiglue::DataCategory::Logic);
+        }
+        color = in2;
+        if (status){
+            Midiglue::write(Midiglue::MAIN_LED, color, &status, sizeof(Int), Midiglue::DataCategory::Logic);
+        }
+    }
+}

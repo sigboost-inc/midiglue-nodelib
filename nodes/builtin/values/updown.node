@@ -1,0 +1,54 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Decrement value by 1 & output current value
+input Any : Increment value by 1 & output current value
+input Any : Output current value
+input Int : Set min value
+input Int : Set max value
+output Int : Counter output
+
+<Description>
+Counter which can count upwards and downwards.
+
+<Parameter>
+parameter Value = 1 : Default value
+parameter Min = 1 : Min value
+parameter Max = 16 : Max value
+parameter Cyclic = false : Cycle value or not
+
+<Code>
+static Int value = ${Value};
+static Int min = ${Min};
+static Int max = ${Max};
+static bool cyclic = ${Cyclic};
+if (@in0){
+    value--;
+    if (value < min){
+        if (cyclic){
+            value = max;
+        }else{
+            value = min;
+        }
+    }
+    out0 = value;
+}else if (@in1){
+    value++;
+    if (max < value){
+        if (cyclic){
+            value = min;
+        }else{
+            value = max;
+        }
+    }
+    out0 = value;
+}else if (@in2){
+    out0 = value;
+}else if (@in3){
+    min = in3;
+}else if (@in4){
+    max = in4;
+}
+

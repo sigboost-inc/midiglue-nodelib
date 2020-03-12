@@ -1,0 +1,66 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set interval tick
+input Float : Set swing
+input Int : Set state Enable(1) / Disable(0)
+output Int : Bang output
+
+<Description>
+Metronome with swing.
+Use the timediv node to set the interval tick.
+Swing parameter is specified as Float value of range 0.0-1.0 .
+Swing value of 0.5 means no swing.
+Set tempo with tempo_bpm or tempo_ext.
+
+<Parameter>
+parameter IntervalTick = 0 : Interval Tick
+parameter Swing = 0.5 : Swing parameter
+parameter State = ["1", "0"] : Initial state
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static Int interval = ${IntervalTick};
+static Float swing = ${Swing};
+static Int state = ${State};
+static Midiglue::event_delay_t delay_base;
+static Midiglue::event_delay_t delay_swing;
+
+static auto cb_swing = [&](){
+    out0 = Midiglue::__bang;
+};
+static auto event_swing = Midiglue::make_oneshot_tick_event<>(cb_swing);
+static auto cb_base = [&](){
+    out0 = Midiglue::__bang;
+    if (state)
+        event_swing->schedule(delay_swing);
+};
+static auto event_base = Midiglue::make_cyclic_tick_event<>(cb_base);
+static auto reschedule = [&]{
+    if (interval > 0 && state){
+        delay_base = interval * 2;
+        delay_swing = delay_base * swing;
+        event_base->schedule(delay_base);
+    }else{
+        event_base->cancel();
+        event_swing->cancel();
+    }
+};
+
+if (@in0){
+    // set interval (tick)
+    interval = in0;
+    reschedule();
+}else if (@in1){
+    swing = std::min(std::max(0.0f, in1), 1.0f);
+    delay_swing = delay_base * swing;
+}else if (@in2){
+    state = in2;
+    reschedule();
+}else if (@setup){
+    reschedule();
+}

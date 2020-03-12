@@ -1,0 +1,92 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set index and trigger command execution
+input Float : Set data
+input Int : Set command read(0)/assign(1)/erase(2)/pushback(3)/popback(4)/log(5)
+output Float : Element output
+output Int : List size output
+output FloatList : List output
+
+<Description>
+list of Float.
+There are 6 commands to manipulate the list.
+1. read (0) : Read out the element at the index
+2. assign (1) : Assign the data (set to the middle port) to the element at the index
+3. erase (2) : Erase the element at the index
+4. pushback (3) : Add the data (set to the middle port) to the back of the list
+5. popback (4) : Remove a data from the back of the list
+6. log (5) : Output all the elements in the list to the debug log
+
+NOTE:
+All commands are triggered by the left input port even when an index is not needed.
+You can use bang to trigger commands that does not require an index.
+The entire list and the size of the list is outputted when a command (other than "log") is triggered.
+
+<Parameter>
+parameter List = "0.1, 1.3" : C++ style initializer lists (except "{}")
+
+<Code>
+static FloatList list = Midiglue::make_list<Float>({${List}});
+static Float data;
+static Int command;
+if (@in0){
+    if (in0 >= 0) {
+        switch (command) {
+        case 0: // read
+            if (in0 < list->size()) {
+                out2 = list;
+                out1 = list->size();
+                out0 = list->at(in0);
+            }
+            break;
+        case 1: // assign
+            if (in0 < list->size()) {
+                list->at(in0) = data;
+                out2 = list;
+                out1 = list->size();
+                out0 = data;
+            }
+            break;
+        case 2: // erase
+            if (in0 < list->size()) {
+                Float tmp = list->at(in0);
+                list->erase(list->begin() + in0);
+                out2 = list;
+                out1 = list->size();
+                out0 = tmp;
+            }
+            break;
+        case 3: // pushback
+            list->push_back(data);
+            out2 = list;
+            out1 = list->size();
+            out0 = data;
+            break;
+        case 4: // popback
+            if (!list->empty()){
+                Float tmp = list->back();
+                list->pop_back();
+                out2 = list;
+                out1 = list->size();
+                out0 = tmp;
+            }
+            break;
+        case 5: // log
+            for (auto i = 0; i < list->size(); ++i) {
+                std::string str = "list: " + std::to_string(i);
+                Midiglue::Debug::write_log(str, list->at(i));
+            }
+        default:
+            break;
+        }
+    }
+}else if (@in1){
+    data = in1;
+}else if (@in2){
+    if (command >= 0 && command <= 5) {
+        command = in2;
+    }
+}

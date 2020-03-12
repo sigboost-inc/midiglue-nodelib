@@ -1,0 +1,29 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Number : Left operand, triggers the comparison
+input Number : Right operand, store only
+output Int : Condition result (met = 1, not met = 0)
+
+<Description>
+Performs a numerical comparison.
+Left (Operator) Right
+
+
+<Parameter>
+parameter Operator = ["<", "<=", "==", ">", ">=", "!="] : Operator
+parameter Right = 0.0 : Default right value
+
+<Code>
+static number_t right = ${Right};
+if (@in0){
+    if (in0 ${Operator} right){
+        out0 = 1;
+    }else{
+        out0 = 0;
+    }
+}else if (@in1){
+    right = in1;
+}

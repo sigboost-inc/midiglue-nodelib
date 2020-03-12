@@ -1,0 +1,40 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set NoteOn(1) or NoteOff(0) & trigger output
+input Int : Set note number of noteon/noteoff
+input Int : Set velocity
+input Int : Set MIDI channnel
+output MidiPacket : MIDI packets
+
+<Description>
+Construct NoteOn/NoteOff packet from note number, velocity and channel.
+
+<Parameter>
+parameter Channel = 1 : Default MIDI channel
+
+<Code>
+static uint8_t notenum = 0;
+static uint8_t velocity = 0;
+static uint8_t midich = ${Channel};
+
+if (@in0){
+    if (in0 == 0){
+        auto packet = Midiglue::MidiPacket::makeNoteOff(midich, notenum, velocity);
+        out0 = packet;
+    }else if (in0 == 1){
+        auto packet = Midiglue::MidiPacket::makeNoteOn(midich, notenum, velocity);
+        out0 = packet;
+    }
+}else if (@in1){
+    notenum = in1;
+}else if (@in2){
+    velocity = in2;
+}else if (@in3){
+    midich = in3;
+    if (midich < 1 || 16 < midich){
+        midich = 1;
+    }
+}

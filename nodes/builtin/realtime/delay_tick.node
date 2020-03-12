@@ -1,0 +1,32 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Input
+input Int : Set delay time (tick)
+output Any : Delayed
+
+<Description>
+Memorize incoming number and output them with delay.
+Delay time is specified in ticks (480 ticks are equivalent to 1 quarter note).
+The MaxEvents parameter is an upper limit on the number of events that this node can hold simultaneously. If the limit has been reached, new events are ignored.
+Increasing MaxEvents allows you to hold more events, but consumes more RAM.
+Tick depends on the master tempo. Use the tempo_ext or tempo_bpm nodes to control the master tempo.
+
+<Parameter>
+parameter Delay = 1000 : Delay time in tick
+parameter MaxEvents = 32 : Max number of events to memorize
+
+<Code>
+static Midiglue::event_delay_t delay_tick = ${Delay};
+static auto cb = [&](any_t payload){
+    out0=payload;
+};
+static auto event = Midiglue::make_multi_tick_event<${MaxEvents}, any_t>(cb);
+
+if (@in0) {
+    event->schedule(delay_tick, in0);
+}else if (@in1){
+    delay_tick = in1;
+}

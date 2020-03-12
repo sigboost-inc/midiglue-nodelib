@@ -1,0 +1,56 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI input & trigger output
+input Int : Set pitch shift amount
+input Int : Set MIDI channel
+input Any : Reset internal state and send noteoff
+output MidiPacket : Pitch-shifted and Channel-modified NoteOn/NoteOff
+
+<Description>
+Perform pitch shift and channel change to MIDI notes.
+NOTE:
+Tracks the holded note to send the correct NoteOff. Consumes up to 2KB of RAM.
+
+<Parameter>
+parameter PitchShift = 0 : Default pitch shift amount
+parameter ChChange = 0 : Default channel. Set 0 to keep the original channel
+
+<Code>
+/*
+NOTE:
+When pitch shifting, care must be taken when handling nofeoff.
+The user may change the pitch shift value while note holding.
+Note-offs should be converted with the pitch-shift value at corresponding note-on was pressed. (not with the current pitch-shift value.)
+*/
+
+static std::function<void(Midiglue::MidiPacket&)> release = [&](Midiglue::MidiPacket& packet){
+    out0 = packet;
+};
+
+static ActiveNoteTracker tracker;
+static Int pitch_shift = ${PitchShift};
+static Int ch_change = ${ChChange};
+if (@in0){
+    if (Midiglue::is_valid(in0)){
+        if (in0.isNoteOn()){
+            Int ch = (ch_change==0) ? in0.getChannel() : ch_change;
+            auto packet = tracker.noteon(in0, ch, std::clamp(in0.getNoteNumber() + pitch_shift, 0, 127));
+            out0 = packet;
+        }else if (in0.isNoteOff()){
+            auto packet = tracker.noteoff(in0);
+            if (Midiglue::is_valid(packet)){
+                out0 = packet;
+            }
+        }
+    }
+}else if (@in1){
+    pitch_shift = in1;
+}else if (@in2){
+    ch_change = std::clamp(in2, 0, 16);
+}else if (@in3){
+    tracker.release_all(release);
+}
+

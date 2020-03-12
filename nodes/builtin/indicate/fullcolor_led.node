@@ -1,0 +1,66 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Off(0)/On(1)
+input Any : Trigger pulse
+input Float : Change red intensity (0.0-1.0)
+input Float : Change green intensity (0.0-1.0)
+input Float : Change blue intensity (0.0-1.0)
+
+<Description>
+Light the main LED.
+You can fully control the intensity of R/G/B between 0.0 and 1.0.
+
+<Parameter>
+parameter Red = 0.0 : Default red intensity (0.0-1.0)
+parameter Green = 0.0 : Default green intensity (0.0-1.0)
+parameter Blue = 0.0 : Default blue intensity (0.0-1.0)
+
+<Requirements>
+require MAIN_LED_Output
+
+<Code>
+static Int status = 0;
+static Float red = ${Red};
+static Float green = ${Green};
+static Float blue = ${Blue};
+static auto timeout_cbf = [&]{
+    status = 0;
+    Float ZERO = 0.0;
+    Midiglue::write(Midiglue::MAIN_LED, Midiglue::White, &ZERO, sizeof(Float), Midiglue::DataCategory::Ratio);
+};
+static auto event = Midiglue::make_oneshot_us_event<>(timeout_cbf);
+if (@in0){
+    status = in0;
+    if (status){
+        Midiglue::write(Midiglue::MAIN_LED, Midiglue::Red, &red, sizeof(Float), Midiglue::DataCategory::Ratio);
+        Midiglue::write(Midiglue::MAIN_LED, Midiglue::Green, &green, sizeof(Float), Midiglue::DataCategory::Ratio);
+        Midiglue::write(Midiglue::MAIN_LED, Midiglue::Blue, &blue, sizeof(Float), Midiglue::DataCategory::Ratio);
+    }else{
+        Float ZERO = 0.0;
+        Midiglue::write(Midiglue::MAIN_LED, Midiglue::White, &ZERO, sizeof(Float), Midiglue::DataCategory::Ratio);
+    }
+}else if (@in1){
+    status = 1;
+    Midiglue::write(Midiglue::MAIN_LED, Midiglue::Red, &red, sizeof(Float), Midiglue::DataCategory::Ratio);
+    Midiglue::write(Midiglue::MAIN_LED, Midiglue::Green, &green, sizeof(Float), Midiglue::DataCategory::Ratio);
+    Midiglue::write(Midiglue::MAIN_LED, Midiglue::Blue, &blue, sizeof(Float), Midiglue::DataCategory::Ratio);
+    event->schedule(20000);
+}else if (@in2){
+    red = in2;
+    if (status) {
+        Midiglue::write(Midiglue::MAIN_LED, Midiglue::Red, &red, sizeof(Float), Midiglue::DataCategory::Ratio);
+    }
+}else if (@in3){
+    green = in3;
+    if (status) {
+        Midiglue::write(Midiglue::MAIN_LED, Midiglue::Green, &green, sizeof(Float), Midiglue::DataCategory::Ratio);
+    }
+}else if (@in4){
+    blue = in4;
+    if (status) {
+        Midiglue::write(Midiglue::MAIN_LED, Midiglue::Blue, &blue, sizeof(Float), Midiglue::DataCategory::Ratio);
+    }
+}

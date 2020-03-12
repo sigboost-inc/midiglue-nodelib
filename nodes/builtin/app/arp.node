@@ -1,0 +1,134 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Clock
+input MidiPacket : MIDI input
+input Int : Hold (1 on / 0 off)
+input Int : Mode
+output Int : Note Number
+output Int : Velocity
+output String : Mode name
+
+<Description>
+Outputs each time Clock is input.
+The notes to be arpeggiated are specified by the midi input.
+Notes are recorded in the order in which you press the keys.
+If you turn on Hold, you can continue playing even if you take your hand off the keyboard.
+
+<Parameter>
+parameter Channel = 1 :  Default MIDI channel
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static std::vector<std::pair<uint8_t, uint8_t>> notes; //notenum, vel
+static std::vector<std::pair<uint8_t, uint8_t>> play_notes; //notenum, vel
+static Int ch = ${Channel};
+static bool hold = true;
+static Int mode = 0;
+static Int index = 0;
+
+// mode specific
+static auto init_index = [&]{
+    switch (mode){
+        case 0:
+        case 2:
+        default:
+            index = 0;
+            break;
+        case 1:
+            index = play_notes.size()-1;
+            break;
+        case 3:
+            index = Random::gen(0, play_notes.size()-1);
+    }
+};
+static auto next_index = [&]{
+    if (mode==0){
+        // up
+        index++;
+        if (play_notes.size() <= index){
+            index = 0;
+        }
+    }else if (mode==1){
+        // down
+        index--;
+        if (index < 0){
+            index = play_notes.size()-1;
+        }
+    }else if (mode==2){
+        // exc
+        static int dir = 1;
+        index += dir;
+        if (index < 0){
+            index = 0;
+            dir = -dir;
+        }else if (play_notes.size() <= index){
+            index = play_notes.size()-1;
+            dir = -dir;
+        }
+    }else if (mode==3){
+        // rand
+        index = Random::gen(0, play_notes.size()-1);
+    }
+};
+static auto mode_name = [&]{
+    switch (mode){
+        case 0:
+            return Midiglue::make_string("Up");
+        case 1:
+            return Midiglue::make_string("Dwn");
+        case 2:
+            return Midiglue::make_string("Inc");
+        case 3:
+            return Midiglue::make_string("Rand");
+        default:
+            return Midiglue::make_string("-");
+    }
+};
+
+
+if (@in0){
+    if (play_notes.size()==0){
+        return;
+    }
+    index = std::clamp(index, 0, (int)play_notes.size()-1);
+    out1 = play_notes[index].second; // velocity
+    out0 = play_notes[index].first; // notenum
+
+    // determine index for next play
+    next_index();
+}
+else if (@in1){
+    if (in1.isNoteOn() && in1.getChannel() == ch) {
+        if (notes.size()==0){
+            play_notes.clear();
+        }
+        auto itr = std::find_if( notes.begin(), notes.end(), [&](std::pair<uint8_t,uint8_t> p){return p.first==in1.getNoteNumber();} );
+        if (itr == notes.end()){
+            notes.push_back( std::make_pair(in1.getNoteNumber(), in1.getVelocity()) );
+            play_notes.push_back( std::make_pair(in1.getNoteNumber(), in1.getVelocity()) );
+        }
+    }else if (in1.isNoteOff() && in1.getChannel() == ch){
+        auto itr = std::find_if( notes.begin(), notes.end(), [&](std::pair<uint8_t,uint8_t> p){return p.first==in1.getNoteNumber();} );
+        if (itr != notes.end()) {
+            notes.erase(itr);
+            if (!hold) {
+                auto itr2 = std::find_if( play_notes.begin(), play_notes.end(), [&](std::pair<uint8_t,uint8_t> p){return p.first==in1.getNoteNumber();} );
+                if (itr2 != notes.end()) play_notes.erase(itr2);
+            }
+        }
+        if (play_notes.size()==0) init_index();
+    }
+}else if (@in2){
+    hold = (in2>0) ? true : false;
+}else if (@in3){
+    mode = std::clamp(in3, 0, 3);
+    init_index();
+    out2 = mode_name();
+}else if (@setup){
+    out2 = mode_name();
+}

@@ -1,0 +1,33 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Input
+input Int : Output port selection
+output Any : Output 0
+output Any : Output 1
+output Any : Output 2
+output Any : Output 3
+
+<Description>
+Route input to selected output port.
+
+<Parameter>
+parameter Select = 0 : output port number to select
+
+<Code>
+static Int select = ${Select};
+if (@in0){
+    if (select==0){
+        out0 = in0;
+    }else if (select==1){
+        out1 = in0;
+    }else if (select==2){
+        out2 = in0;
+    }else if (select==3){
+        out3 = in0;
+    }
+}else if (@in1){
+    select = in1;
+}

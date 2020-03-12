@@ -1,0 +1,25 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Input
+output Any : Output 0
+output Any : Output 1
+
+<Description>
+Route input to output 0 and output 1 alternately.
+
+<Parameter>
+parameter Port = ["0", "1"] : Initial output port
+
+<Code>
+static Int port = ${Port};
+if (@in0) {
+    if (port == 0) {
+        out0 = in0;
+    }else {
+        out1 = in0;
+    }
+    port = !port;
+}

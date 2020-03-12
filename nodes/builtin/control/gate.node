@@ -1,0 +1,33 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Data input
+input Int : Open(1) or close(0) gate
+output Any : Output if gate is open
+output Any : Output if gate is close
+
+<Description>
+Pass data only when the gate is open.
+
+<Parameter>
+parameter Open = true : Initial state of gate
+
+<Code>
+static bool is_open = ${Open};
+
+if (@in0){
+    if (is_open){
+        out0 = in0;
+    }else{
+        out1 = in0;
+    }
+}else if (@in1){
+    if (in1 == 0){
+        is_open = false;
+    }else{
+        is_open = true;
+    }
+}
+

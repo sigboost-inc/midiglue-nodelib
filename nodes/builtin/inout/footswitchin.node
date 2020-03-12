@@ -1,0 +1,42 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+output Int : Momentary out (output 1 when pushed, 0 otherwise)
+output Int : Bang out (output a bang when pushed)
+output Int : Alternate out (toggle output 1 and 0 each time when pushed)
+
+<Description>
+Foot switch Input.
+3 types of outputs are available.
+- Momentary (output 1 when pushed, 0 otherwise)
+- Bang (output a bang when pushed)
+- Alternate (toggle output 1 and 0 each time when pushed)
+
+<Parameter>
+parameter Number = ["1", "2"] : Jack number of foot switch input
+parameter Inverse = false : Inverse polarity
+parameter Initial = ["0", "1"] : Initial state of toggle out
+
+<Requirements>
+require FOOTSWITCH_Input_${Number}
+
+<Setup>
+Midiglue::attach(Midiglue::STEREOMINI_IN_${Number}, ${this}, 0, Midiglue::DataCategory::Logic);
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static Int toggle_state = ${Initial};
+if(@jackin0){
+    Int state = ${Inverse} ? !*(Int*)(_data) : *(Int*)(_data);
+    out0 = state;
+    if (state!=0){
+        out1 = Midiglue::__bang;
+        toggle_state = !toggle_state;
+        out2 = toggle_state;
+    }
+}else if (@setup){
+    out0 = 0;
+    out2 = toggle_state;
+}

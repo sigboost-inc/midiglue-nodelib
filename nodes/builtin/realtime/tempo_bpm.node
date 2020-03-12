@@ -1,0 +1,52 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Float : Set BPM
+input Int : Set start(2)/continue(1)/stop(0)
+input Any : Trigger reset
+
+<Description>
+Set master tempo with BPM.
+All nodes that use tick as the timing base relies on master tempo.
+If this node is placed in a flow, master tempo is controlled by this node.
+Available operations are:
+- Set BPM: Set BPM by Float value
+- Set status:
+  - start: Reset tick count and start counting up ticks
+  - continue: Resume counting up ticks without resetting tick count
+  - stop: Stop tick count without resetting tick count
+- Trigger reset: Reset tick count
+
+<Parameter>
+parameter BPM = 120 : Initial bpm
+parameter State = ["Start", "Continue", "Stop"] : Initial state (start(2)/continue(1)/stop(0))
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static Float bpm = ${BPM};
+
+if (@in0){
+    bpm = in0;
+    Midiglue::set_bpm(bpm);
+}else if (@in1){
+    if (in1 == static_cast<Int>(Midiglue::ClockState::Start)){
+        Midiglue::reset_tick(Midiglue::TPQN);
+        Midiglue::start_tick(true);
+    }else if (in1 == static_cast<Int>(Midiglue::ClockState::Continue)){
+        Midiglue::start_tick(true);
+    }else if (in1 == static_cast<Int>(Midiglue::ClockState::Stop)){
+        Midiglue::stop_tick();
+    }
+}else if (@in2){
+    Midiglue::reset_tick(Midiglue::TPQN);
+}else if (@setup){
+    Midiglue::init_tick_manager();
+    Midiglue::set_bpm(bpm);
+    if (Midiglue::ClockState::${State} != Midiglue::ClockState::Stop) {
+        Midiglue::start_tick(true);
+    }
+}

@@ -1,0 +1,29 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Reference value by key
+input Int : Set key and create a key-value entry
+input Any : Set value
+input Int : Erase value at key
+output Any : Output value
+
+<Description>
+Simple dictionary data container.
+You can associate any value with a Int key.
+
+<Code>
+static std::unordered_map<Int, any_t> map;
+static any_t data(Midiglue::init_default<any_t>());
+if (@in0){
+    if (map.count(in0)){
+        out0 = map.at(in0);
+    }
+}else if (@in1){
+    map[in1] = data;
+}else if (@in2){
+    data = in2;
+}else if (@in3){
+    map.erase(in3);
+}

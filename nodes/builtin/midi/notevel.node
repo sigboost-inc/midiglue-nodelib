@@ -1,0 +1,35 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI input & trigger output
+input Float : Set volume(0.0-1.0)
+output MidiPacket : Velocity-changed NoteOn / NoteOut
+
+<Description>
+Controls the velocity of MIDINotes.
+You can use "velocity", "volume", and other arithmetic operations in expression(formula)s.
+
+<Parameter>
+parameter Expression = "velocity * volume" : Expression for calculating Velocity
+
+<Code>
+static Float volume = 1.0;
+if (@in0){
+    if (Midiglue::is_valid(in0)){
+        if (in0.isNoteOn()){
+            auto velocity = in0.getVelocity();
+            velocity = ${Expression};
+            if (velocity != 0){
+                auto packet = Midiglue::MidiPacket::makeNoteOn(in0.getChannel(), in0.getNoteNumber(), velocity);
+                out0 = packet;
+            }
+        }else if (in0.isNoteOff()){
+            out0 = in0;
+        }
+    }
+}else if (@in1){
+    volume = in1;
+}
+

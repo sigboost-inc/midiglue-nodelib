@@ -1,0 +1,46 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Read out N pieces of data (or clear if minus)
+input Int : Pop and output N pieces of data (or Pop only N pieces if minus)
+input Any : Add value to front
+output Any : Output
+
+<Description>
+Stack. (LIFO = Last-In-First-Out.) Store and output data.
+When pop -N is requested, delete (not output) N pieces of data.
+
+<Code>
+static std::deque<any_t> q;
+
+if (@in0){
+    // Read
+    Int read_times = std::clamp(in0, 0, (int)q.size());
+    for (Int i=0; i<read_times; ++i){
+        out0 = q.at(i);
+    }
+}else if (@in1){
+    if (in0 < 0){
+        // Delete
+        Int read_times = -in0;
+        if (q.size() <= read_times){
+            q.clear();
+        }else{
+            for (Int i=0; i<read_times; ++i){
+                q.pop_front();
+            }
+        }
+    }else{
+        // Pop
+        Int read_times = std::min(in0, (int)q.size());
+        for (Int i=0; i<read_times; ++i){
+            out0 = q.front();
+            q.pop_front();
+        }
+    }
+}else if (@in2){
+    // Push
+    q.push_front(in2);
+}

@@ -1,0 +1,17 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Input
+output Any : Second output
+output Any : First output
+
+<Description>
+Send input values in a fixed order (out1 -> out0)
+
+<Code>
+if (@in0) {
+    out1 = in0;
+    out0 = in0;
+}

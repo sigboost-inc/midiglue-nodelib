@@ -1,0 +1,57 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+output MidiPacket : MIDI packets except System Exclusive Messages
+output MidiSysEx : System Exclusive Messages
+
+<Description>
+MIDI Input.
+
+<Parameter>
+parameter Input1 = true : Legacy MIDI Input #1. on / off
+parameter Input2 = true : Legacy MIDI Input #2. on / off
+parameter USBDevice = true : USB MIDI Device. on / off
+parameter USBHost = true : USB MIDI Host. on / off
+
+<Requirements>
+require MIDI_Input_1 if "${Input1}"=="true"
+require MIDI_Input_2 if "${Input2}"=="true"
+require USB_MIDI_Device if "${USBDevice}"=="true"
+require USB_MIDI_Host if "${USBHost}"=="true"
+
+<Setup>
+if ( ${Input1} ){
+    Midiglue::attach(Midiglue::DIN5PIN_IN_1, ${this}, 0, Midiglue::DataCategory::MidiPacket); // jacknum, func, channel, param
+    Midiglue::attach(Midiglue::DIN5PIN_IN_1, ${this}, 1, Midiglue::DataCategory::MidiRealtime);
+    Midiglue::attach(Midiglue::DIN5PIN_IN_1, ${this}, 2, Midiglue::DataCategory::SystemExclusive);
+}
+if ( ${Input2} ){
+    Midiglue::attach(Midiglue::DIN5PIN_IN_2, ${this}, 0, Midiglue::DataCategory::MidiPacket);
+    Midiglue::attach(Midiglue::DIN5PIN_IN_2, ${this}, 1, Midiglue::DataCategory::MidiRealtime);
+    Midiglue::attach(Midiglue::DIN5PIN_IN_2, ${this}, 2, Midiglue::DataCategory::SystemExclusive);
+}
+if ( ${USBDevice} ){
+    Midiglue::attach(Midiglue::USB_MIDI_DEVICE, ${this}, 0, Midiglue::DataCategory::MidiPacket);
+    Midiglue::attach(Midiglue::USB_MIDI_DEVICE, ${this}, 1, Midiglue::DataCategory::MidiRealtime);
+    Midiglue::attach(Midiglue::USB_MIDI_DEVICE, ${this}, 2, Midiglue::DataCategory::SystemExclusive);
+}
+if ( ${USBHost} ){
+    Midiglue::attach(Midiglue::USB_MIDI_HOST, ${this}, 0, Midiglue::DataCategory::MidiPacket);
+    Midiglue::attach(Midiglue::USB_MIDI_HOST, ${this}, 1, Midiglue::DataCategory::MidiRealtime);
+    Midiglue::attach(Midiglue::USB_MIDI_HOST, ${this}, 2, Midiglue::DataCategory::SystemExclusive);
+}
+
+<Code>
+if (@jackin0){
+    out0 = *(MidiPacket*)(_data);
+}else if (@jackin1){
+    MidiPacket* rx_packet = (MidiPacket*)(_data);
+    auto packet = MidiPacket::makeSingleByte(rx_packet->getRawStatusByte());
+    out0 = packet;
+}else if (@jackin2){
+    out1 = *(MidiSysEx*)(_data);
+}
+
+

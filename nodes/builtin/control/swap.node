@@ -1,0 +1,33 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : A
+input Any : B
+output Any : Output B second
+output Any : Output A first
+
+<Description>
+Swaps the order of the two inputs.
+Wait until both A and B data are available before outputting data.
+
+<Code>
+// TODO : std::optional is C++17 or later
+static any_t a, b;
+static bool a_valid = false;
+static bool b_valid = false;
+static auto output = [&]{
+    out1 = a;
+    out0 = b;
+    a_valid = b_valid = false;
+};
+if (@in0){
+    a = in0;
+    a_valid = true;
+    if (b_valid) output();
+}else if (@in1){
+    b = in1;
+    b_valid = true;
+    if (a_valid) output();
+}

@@ -1,0 +1,39 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set control value & trigger output
+input Int : Set control number
+input Int : Set MIDI channnel
+output MidiPacket : Output
+
+<Description>
+Construct MIDI Control Change packet.
+For details on CC Number, refer to the MIDI specification.
+ex.)
+1/33 = modulation(MSB/LSB)
+2/34 = breath controller(MSB/LSB)
+64 = damper(sustain) pedal
+
+<Parameter>
+parameter Channel = 1 : Default MIDI channel
+parameter CCnumber = 64 : Default CC number
+
+<Code>
+static uint8_t value = 0;
+static uint8_t number = ${CCnumber};
+static uint8_t midich = ${Channel};
+
+if (@in0){
+    value = in0;
+    auto packet = MidiPacket::makeControlChange(midich, static_cast<Midiglue::MIDICCType>(number), value);
+    out0 = packet;
+}else if (@in1){
+    number = in1;
+}else if (@in2){
+    midich = in2;
+    if (midich < 1 || 16 < midich){
+        midich = 1;
+    }
+}

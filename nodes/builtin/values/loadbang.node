@@ -1,0 +1,17 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+output Int : Bang out
+
+<Description>
+Output bang when the flow loaded.
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+if (@setup){
+    out0 = Midiglue::__bang;
+}

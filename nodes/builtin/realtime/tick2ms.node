@@ -1,0 +1,28 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Tick
+input Float : Change percentage (1.0 = 100%)
+output Float : Millisecond
+
+<Description>
+Calculate millisecond from tick. You can calculate note length by combining with timdiv node etc.
+
+<Parameter>
+parameter Percentage = 1.0 : For control note length
+
+<Code>
+static Int tick = 480/2;
+static Float per = ${Percentage};
+static auto calc_out = [&]{
+    out0 = Music::Rhythm::tick2ms(tick, Midiglue::get_bpm(), Midiglue::TPQN) * per;
+};
+if (@in0){
+    tick = in0;
+    calc_out();
+}else if (@in1){
+    per = in1;
+    calc_out();
+}

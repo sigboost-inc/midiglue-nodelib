@@ -1,0 +1,25 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Float : CV voltage
+
+<Description>
+Output CV from voltage. Sampling rate is 1kHz.
+2 types of decimation filter is available.
+- Butterworth : Flat freqency response up to 250Hz
+- Bessel : Good transient response, but the freqency response slowly rolls off
+
+<Parameter>
+parameter Number = ["1", "2"] : Jack number of CV input
+parameter Filt = ["Butterworth", "Bessel"] : Type of decimation filter
+
+<Requirements>
+require CV_Output_${Filt}_${Number}
+
+<Code>
+if (@in0){
+    Midiglue::write(Midiglue::STEREOMINI_OUT_${Number}, 0, &in0, sizeof(Float), Midiglue::DataCategory::Voltage);
+}
+

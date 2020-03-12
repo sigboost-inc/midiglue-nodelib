@@ -1,0 +1,28 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+output Int : Sync bang out
+
+<Description>
+SYNC Input.
+Use this node instead of gatein node for SYNC signals.
+
+<Parameter>
+parameter Number = ["1", "2"] : Sync number
+parameter Inverse = false : Inverse polarity
+
+<Requirements>
+require SYNC_Input_${Number}
+
+<Setup>
+Midiglue::attach(Midiglue::STEREOMINI_IN_${Number}, ${this}, 0, Midiglue::DataCategory::Logic);
+
+<Code>
+if(@jackin0){
+    Int state = ${Inverse} ? !*(Int*)(_data) : *(Int*)(_data);
+    if (state!=0){
+        out0 = Midiglue::__bang;
+    }
+}

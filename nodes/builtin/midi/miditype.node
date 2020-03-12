@@ -1,0 +1,25 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI input
+output MidiPacket : Type matches
+output MidiPacket : Not matches
+
+<Description>
+Check the type of MIDI Packet.
+
+<Parameter>
+parameter Type = ["Note", "NoteOn", "NoteOff", "ControlChange", "PitchBend"] : MIDI Type
+
+<Code>
+if (@in0){
+    if (Midiglue::is_valid(in0)){
+        if (in0.is${Type}()){
+            out0 = in0;
+        }else{
+            out1 = in0;
+        }
+    }
+}

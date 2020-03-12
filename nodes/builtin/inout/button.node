@@ -1,0 +1,67 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+output Int : Momentary out (output 1 when pushed, 0 otherwise)
+output Int : Bang out (output a bang when pushed)
+output Int : Alternate out (toggle output 1 and 0 each time when pushed)
+output Int : Longpress out (output bang when longpressed)
+
+<Description>
+Button input.
+4 types of outputs are available.
+- Momentary (output 1 when pushed, 0 otherwise)
+- Bang (output a bang when pushed)
+- Alternate (toggle output 1 and 0 each time when pushed)
+- Longpress (output bang when longpressed)
+
+<Parameter>
+parameter Button = ["BUTTON_A", "BUTTON_B", "BUTTON_L", "BUTTON_R"] : Target Button
+parameter Initial = ["0", "1"] : Initial state of toggle out
+parameter UseCombination = false : Use combination button or not
+parameter Combination = ["BUTTON_A", "BUTTON_B", "BUTTON_L", "BUTTON_R", "BUTTON_BACK"] : Button to use in combination with the button
+
+<Setup>
+Midiglue::attach(Midiglue::${Button}, ${this}, 0, Midiglue::DataCategory::Logic);
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static Int toggle_state = ${Initial};
+if (@button){
+    Int state = (Int)*(unsigned char*)(_data);
+    bool is_active = false;
+    if (${UseCombination}){
+        if (Midiglue::is_combination_pushed(Midiglue::Buttons::${Button}, Midiglue::Buttons::${Combination})){
+            is_active = true;
+        }else if (state == 0 || Midiglue::is_combination_pushed(Midiglue::Buttons::${Combination})){
+            is_active = true;
+        }
+    }else{
+        if (state == 0 || Midiglue::is_combination_pushed(Midiglue::Buttons::${Button})){
+            is_active = true;
+        }
+    }
+    if (is_active){
+        out0 = state;
+        if (state!=0){
+            out1 = Midiglue::__bang;
+            toggle_state = !toggle_state;
+            out2 = toggle_state;
+        }
+    }
+}else if (@button_longpress){
+    if (${UseCombination}){
+        if (Midiglue::is_combination_pushed(Midiglue::Buttons::${Button}, Midiglue::Buttons::${Combination})){
+            out3 = Midiglue::__bang;
+        }
+    }else{
+        if (Midiglue::is_combination_pushed(Midiglue::Buttons::${Button})){
+            out3 = Midiglue::__bang;
+        }
+    }
+}else if (@setup){
+    out0 = 0;
+    out2 = toggle_state;
+}
+

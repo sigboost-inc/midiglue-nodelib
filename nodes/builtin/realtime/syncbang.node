@@ -1,0 +1,47 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set PPQN
+input Int : Set state Enable(1) / Disable(0)
+output Int : Sync bang out
+
+<Description>
+Output bang for timing source of midiclockout/dinsyncout/syncout etc.
+You can specify PPQN (for example, MIDI Timing Clock is 24 PPQN).
+Set tempo with tempo_bpm or tempo_ext.
+To use this node, master tempo must be set up with tempo_bpm or tempo_ext node!!!
+
+<Parameter>
+parameter PPQN = 1 : Pulses per quarter note
+parameter State = ["1", "0"] : Initial state
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static Int ppqn = ${PPQN};
+static Int state = ${State};
+static auto cb = [&](){
+    out0 = Midiglue::__bang;
+};
+static auto event = Midiglue::make_cyclic_tick_event<>(cb);
+static auto reschedule = [&](){
+    if (ppqn > 0 && state){
+        event->schedule(Midiglue::TPQN / ppqn);
+    }else{
+        event->cancel();
+    }
+};
+
+
+if (@in0){
+    ppqn = in0;
+    reschedule();
+}else if (@in1){
+    state = in1;
+    reschedule();
+}else if (@setup){
+    reschedule();
+}

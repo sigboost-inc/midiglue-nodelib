@@ -1,0 +1,52 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI packets except System Exclusive Messages
+input MidiSysEx : System Exclusive Messages
+
+<Description>
+MIDI Output.
+In case you do not use NoteOff velocity and the output is too slow, consider using ConvNoteOff option.
+This option will speed up Legacy MIDI transmission by converting all NoteOff to NoteOn with velocity 0 (for Legacy MIDI only).
+
+<Parameter>
+parameter Output1 = true : Legacy MIDI Output #1. on / off
+parameter Output2 = true : Legacy MIDI Output #2. on / off
+parameter USBDevice = true : USB MIDI Device. on / off
+parameter USBHost = true : USB MIDI Host. on / off
+parameter ConvNoteOff = false : Convert NoteOff to NoteOn with velocity 0 for Legacy MIDI
+
+<Requirements>
+require MIDI_Output_1 if "${Output1}"=="true"
+require MIDI_Output_2 if "${Output2}"=="true"
+require USB_MIDI_Device if "${USBDevice}"=="true"
+require USB_MIDI_Host if "${USBHost}"=="true"
+
+<Code>
+if (@in0){
+    if (in0.event_type == Midiglue::MIDIEventType::SingleByte){
+        if ( ${Output1} ) Midiglue::write(Midiglue::DIN5PIN_OUT_1, 1, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${Output2} ) Midiglue::write(Midiglue::DIN5PIN_OUT_2, 1, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${USBDevice} ) Midiglue::write(Midiglue::USB_MIDI_DEVICE, 1, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${USBHost} ) Midiglue::write(Midiglue::USB_MIDI_HOST, 1, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+    }else if (${ConvNoteOff} && in0.event_type == Midiglue::MIDIEventType::NoteOff){
+        auto noteon_packet = Midiglue::MidiPacket::makeNoteOn(in0.getChannel(), in0.getNoteNumber(), 0);
+        if ( ${Output1} ) Midiglue::write(Midiglue::DIN5PIN_OUT_1, 0, &noteon_packet, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${Output2} ) Midiglue::write(Midiglue::DIN5PIN_OUT_2, 0, &noteon_packet, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${USBDevice} ) Midiglue::write(Midiglue::USB_MIDI_DEVICE, 0, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${USBHost} ) Midiglue::write(Midiglue::USB_MIDI_HOST, 0, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+    }else if (in0.event_type != Midiglue::MIDIEventType::InvalidPacket){
+        if ( ${Output1} ) Midiglue::write(Midiglue::DIN5PIN_OUT_1, 0, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${Output2} ) Midiglue::write(Midiglue::DIN5PIN_OUT_2, 0, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${USBDevice} ) Midiglue::write(Midiglue::USB_MIDI_DEVICE, 0, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+        if ( ${USBHost} ) Midiglue::write(Midiglue::USB_MIDI_HOST, 0, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+    }
+}else if (@in1){
+    if ( ${Output1} ) Midiglue::write(Midiglue::DIN5PIN_OUT_1, 2, &in1, sizeof(MidiSysEx), Midiglue::DataCategory::SystemExclusive);
+    if ( ${Output2} ) Midiglue::write(Midiglue::DIN5PIN_OUT_2, 2, &in1, sizeof(MidiSysEx), Midiglue::DataCategory::SystemExclusive);
+    if ( ${USBDevice} ) Midiglue::write(Midiglue::USB_MIDI_DEVICE, 2, &in1, sizeof(MidiSysEx), Midiglue::DataCategory::SystemExclusive);
+    if ( ${USBHost} ) Midiglue::write(Midiglue::USB_MIDI_HOST, 2, &in1, sizeof(MidiSysEx), Midiglue::DataCategory::SystemExclusive);
+}
+

@@ -1,0 +1,24 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI input
+output MidiPacket : Channel Message
+output Int : MIDI channnel
+output MidiPacket : Not Channel Message
+
+<Description>
+Extract the channel number from MIDI Packet.
+
+<Code>
+if (@in0){
+    if (Midiglue::is_valid(in0) && in0.isChannelMessage()){
+        out1 = in0.getChannel();
+        out0 = in0;
+    }else{
+        out2 = in0;
+    }
+}
+
+

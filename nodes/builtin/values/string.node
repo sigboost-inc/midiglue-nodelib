@@ -1,0 +1,25 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Send current value
+input String : Set value
+output String : Output current value
+
+<Description>
+Store String value and output.
+
+<Parameter>
+parameter Value = "Default" : Default value
+
+<Code>
+static String value = Midiglue::make_string("${Value}");
+if (@in0){
+    out0 = value;
+}else if (@in1){
+    if (Midiglue::is_valid(in1)){
+        value = in1;
+    }
+}
+

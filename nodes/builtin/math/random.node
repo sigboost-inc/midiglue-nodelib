@@ -1,0 +1,32 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Trigger random number generation
+input Number : Min
+input Number : Max
+output Number : Output value
+
+<Description>
+Generate random number.
+
+<Parameter>
+parameter Min = 0 : Default Min
+parameter Max = 127 : Default Max
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static number_t range_min = ${Min};
+static number_t range_max = ${Max};
+if (@in0){
+    out0 = Random::gen(range_min, range_max);
+}else if (@in1){
+    range_min = in1;
+}else if (@in2){
+    range_max = in2;
+}else if (@setup){
+    Random::init();
+}

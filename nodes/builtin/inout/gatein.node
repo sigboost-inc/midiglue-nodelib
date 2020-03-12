@@ -1,0 +1,42 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+output Int : Normal out (output 0/1)
+output Int : Bang out (output a bang when gate becomes active)
+output Int : Alternate out (toggle output 1 and 0 each time gate becomes active)
+
+<Description>
+GATE Input (Not recommended for SYNC signals).
+3 types of outputs are available.
+- Normal (output 0/1)
+- Bang (output a bang when gate becomes active)
+- Alternate (toggle output 1 and 0 each time gate becomes active)
+
+<Parameter>
+parameter Number = ["1", "2"] : Jack number of gate input
+parameter Inverse = false : Inverse polarity
+parameter Initial = ["0", "1"] : Initial state of toggle out
+
+<Requirements>
+require GATE_Input_${Number}
+
+<Setup>
+Midiglue::attach(Midiglue::STEREOMINI_IN_${Number}, ${this}, 0, Midiglue::DataCategory::Logic);
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static Int toggle_state = ${Initial};
+if(@jackin0){
+    Int state = ${Inverse} ? !*(Int*)(_data) : *(Int*)(_data);
+    out0 = state;
+    if (state!=0){
+        out1 = Midiglue::__bang;
+        toggle_state = !toggle_state;
+        out2 = toggle_state;
+    }
+}else if (@setup){
+    out0 = 0;
+    out2 = toggle_state;
+}

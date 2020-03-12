@@ -1,0 +1,17 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Number : Input
+output Number : Result
+
+<Description>
+Output absolute value
+
+<Parameter>
+
+<Code>
+if (@in0) {
+    out0 = in0 < 0? -in0: in0;
+}

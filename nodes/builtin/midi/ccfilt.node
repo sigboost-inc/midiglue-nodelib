@@ -1,0 +1,46 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI input & trigger output
+input Int : Set target control number
+input Int : Set target channel
+output MidiPacket : Target MIDI Control Change packet
+
+<Description>
+Pick out a specific type of MIDI Control Change packets.
+You can filter packets based on control number, channel, or both.
+For details on CC Number, refer to the MIDI specification.
+ex.)
+1/33 = modulation(MSB/LSB)
+2/34 = breath controller(MSB/LSB)
+64 = damper(sustain) pedal
+
+<Parameter>
+parameter CCnumber = 64 : Initial target control number
+parameter Channel = 1 : Initial target channel
+parameter FiltNumber = true : Check if filter based on control number
+parameter FiltChannel = true : Check if filter based on channel
+
+<Code>
+static Int ctrlnum = ${CCnumber};
+static Int channel = ${Channel};
+if (@in0){
+    if (Midiglue::is_valid(in0) && in0.isControlChange()){
+        bool pass = true;
+        if (${FiltNumber} && in0.getControlNumber() != ctrlnum){
+            pass = false;
+        }
+        if (${FiltChannel} && in0.getChannel() != channel){
+            pass = false;
+        }
+        if (pass){
+            out0 = in0;
+        }
+    }
+}else if (@in1){
+    ctrlnum = in1;
+}else if (@in2){
+    channel = in2;
+}

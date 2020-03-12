@@ -1,0 +1,30 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : TimeDiv index
+output Int : Interval tick
+output String : TimeDiv string
+
+<Description>
+Outputs an interval tick that can be used by the arpeggiator and delay.
+The index that can be set is from 0 to 15.
+
+<Parameter>
+parameter DefaultTimeDiv = ["1_1", "1_2", "1_4", "1_8", "1_16", "1_32", "1_2T", "1_4T", "1_8T", "1_16T", "1_32T", "1_2D", "1_4D", "1_8D", "1_16D", "1_32D"] : Initial Time Div
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static Int interval = Music::Rhythm::timediv(Music::Rhythm::TimeDiv::_${DefaultTimeDiv}, Midiglue::TPQN);
+
+if (@in0){
+    auto d = static_cast<Music::Rhythm::TimeDiv>(std::clamp(in0, 0, (int)Music::Rhythm::TimeDiv::INDEX_MAX-1));
+    out0 = Music::Rhythm::timediv(d, Midiglue::TPQN);
+    out1 = Midiglue::make_string(Music::Rhythm::timediv_name(d));
+}
+else if (@setup){
+    out0 = interval;
+}

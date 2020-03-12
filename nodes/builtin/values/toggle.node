@@ -1,0 +1,33 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Trigger output toggle
+output Int : Output
+
+<Description>
+Every time an input comes in, 0 and 1 are alternately outputted.
+
+<Parameter>
+parameter Invert = ["false"] : Invert output (initial output is 1)
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static bool value = ${Invert};
+if (@in0) {
+    value = !value;
+    if (value){
+        out0 = 1;
+    }else{
+        out0 = 0;
+    }
+}else if (@setup){
+    if (value){
+        out0 = 1;
+    }else{
+        out0 = 0;
+    }
+}

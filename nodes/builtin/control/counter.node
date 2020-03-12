@@ -1,0 +1,27 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Counts up and output value
+input Int : Set internal value
+input Int : Set threshold value
+output Int : Value
+
+<Description>
+It counts up each time a Bang is input. The counter returns to 0 when the threshold is exceeded.
+
+<Parameter>
+parameter Count = 0 : Internal value
+parameter Threshold = 15 : Threshold value
+
+<Code>
+static Int count = ${Count};
+static Int thresh = ${Threshold};
+if (@in0){
+    count += 1;
+    if (thresh < count){
+        count = 0;
+    }
+    out0 = count;
+}

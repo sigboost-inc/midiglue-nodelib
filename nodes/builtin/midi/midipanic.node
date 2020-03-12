@@ -1,0 +1,38 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Trigger MIDI panic
+input Int : MIDI channel (1-16). Set 0 to send to all channels.
+output MidiPacket : MIDI packet
+
+<Description>
+Send AllNotesOff to the specified channel.
+NOTE : If the destination device does not support AllNotesOff message, it has no effect.
+
+<Parameter>
+parameter Channel = 0 : Default MIDI channel. Set 0 to send to all channels.
+parameter AllSoundOff = true : Send AllSoundOff message same time.
+parameter ActiveSensing = true : Send ActiveSensing one time.
+
+<Code>
+static uint8_t midich = ${Channel};
+static bool aso = ${AllSoundOff};
+static bool as = ${ActiveSensing};
+static uint8_t status = 0;
+if (@in0){
+    if (midich == 0){
+        for (size_t i=1; i<=16; ++i){
+            out0 = MidiPacket::makeControlChange(i, Midiglue::MIDICCType::AllNotesOff);
+            if (aso) out0 = MidiPacket::makeControlChange(i, Midiglue::MIDICCType::AllSoundOff);
+        }
+    }else{
+        out0 = MidiPacket::makeControlChange(midich, Midiglue::MIDICCType::AllNotesOff);
+        if (aso) out0 = MidiPacket::makeControlChange(midich, Midiglue::MIDICCType::AllSoundOff);
+    }
+    if (as) out0 = MidiPacket::makeActiveSensing(); // If the destination device supports ActiveSensing, the sound should stop after 300ms.
+}else if (@in1){
+    midich = in1;
+}
+

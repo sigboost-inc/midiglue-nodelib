@@ -1,0 +1,34 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI input & trigger chord name output
+input Int : Set MIDI channel
+output String : Chord name
+
+<Description>
+Output the currently played chord name.
+
+<Parameter>
+parameter Channel = 1 : MIDI channel
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static Int ch = ${Channel};
+static ActiveNoteTracker tracker;
+static std::set<uint8_t> notes;
+if (@in0){
+    if (Midiglue::is_valid(in0)){
+        if (tracker.track_packet(in0)){
+            tracker.get_sounded_notenums(notes, ch);
+            out0 = Midiglue::make_string(Music::Chord::name(notes));
+        }
+    }
+}else if (@in1){
+    ch = in1;
+}else if (@setup){
+    out0 = Midiglue::make_string(Music::Chord::name(notes));
+}

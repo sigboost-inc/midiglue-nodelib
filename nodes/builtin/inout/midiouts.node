@@ -1,0 +1,44 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI packets except System Exclusive Messages
+input MidiSysEx : System Exclusive Messages
+input Int : Select Output (0-3)
+output String : Port string
+
+<Description>
+MIDI Output.
+In case you do not use NoteOff velocity and the output is too slow, consider using ConvNoteOff option.
+This option will speed up Legacy MIDI transmission by converting all NoteOff to NoteOn with velocity 0 (for Legacy MIDI only).
+
+<Parameter>
+parameter DefaultOut = ["0", "1", "2", "3"] : Default select(1, 2, Dev, Host)
+parameter ConvNoteOff = false : Convert NoteOff to NoteOn with velocity 0 for Legacy MIDI
+
+<Requirements>
+require MIDI_Output_1
+require MIDI_Output_2
+require USB_MIDI_Device
+require USB_MIDI_Host
+
+<Code>
+static uint32_t jacks[] = {Midiglue::DIN5PIN_OUT_1, Midiglue::DIN5PIN_OUT_2, Midiglue::USB_MIDI_DEVICE, Midiglue::USB_MIDI_HOST};
+static int index = ${DefaultOut};
+if (@in0){
+    if (in0.event_type == Midiglue::MIDIEventType::SingleByte){
+        Midiglue::write(jacks[index], 1, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+    }else if (${ConvNoteOff} && index < 2 && in0.event_type == Midiglue::MIDIEventType::NoteOff){
+        auto noteon_packet = Midiglue::MidiPacket::makeNoteOn(in0.getChannel(), in0.getNoteNumber(), 0);
+        Midiglue::write(jacks[index], 0, &noteon_packet, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+    }else if (in0.event_type != Midiglue::MIDIEventType::InvalidPacket){
+        Midiglue::write(jacks[index], 0, &in0, sizeof(MidiPacket), Midiglue::DataCategory::MidiPacket);
+    }
+}else if (@in1){
+    Midiglue::write(jacks[index], 2, &in1, sizeof(MidiSysEx), Midiglue::DataCategory::SystemExclusive);
+}else if (@in2){
+    static const std::string port_list[] = {"MIDI1", "MIDI2", "DEV", "HOST"};
+    index = std::clamp(in2, 0, 3);
+    out0 = Midiglue::make_string(port_list[index]);
+}

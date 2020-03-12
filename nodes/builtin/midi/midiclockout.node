@@ -1,0 +1,38 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : MIDI timing clock bang input
+input Int : MIDI timing clock start(2)/continue(1)/stop(0) input
+output MidiPacket : Output
+
+<Description>
+Send MIDI Timing Clock packets.
+
+<Parameter>
+parameter State = ["Stop", "Start", "Continue"] : Initial state (start(2)/continue(1)/stop(0))
+
+<Code>
+static Midiglue::ClockState status = Midiglue::ClockState::${State};
+static const auto CLOCK = MidiPacket::makeTimingClock();
+static const auto STOP = MidiPacket::makeTimingClockStop();
+static const auto START = MidiPacket::makeTimingClockStart();
+static const auto CONTINUE = MidiPacket::makeTimingClockContinue();
+
+if (@in0){
+    if (status != Midiglue::ClockState::Stop) {
+        out0 = CLOCK;
+    }
+}else if (@in1){
+    if (in1 == static_cast<Int>(Midiglue::ClockState::Start)){
+        status = Midiglue::ClockState::Start;
+        out0 = START;
+    }else if (in1 == static_cast<Int>(Midiglue::ClockState::Continue)){
+        status = Midiglue::ClockState::Continue;
+        out0 = CONTINUE;
+    }else if (in1 == static_cast<Int>(Midiglue::ClockState::Stop)){
+        status = Midiglue::ClockState::Stop;
+        out0 = STOP;
+    }
+}

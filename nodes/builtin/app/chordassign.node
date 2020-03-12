@@ -1,0 +1,63 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : MIDI input
+input Int : MIDI channel
+input Int : Mode (0=play, 1=rec)
+output MidiPacket : MIDI output
+output String : Assign to (note name)
+
+<Description>
+This node allows you to assign arbitrary chord to each note number.
+In play mode, if you play a note, the assigned chord (if exists) is outputted.
+To assign a chord to a note, change to rec mode while you pressing a note you want to assign a chord to.
+Then play the chord you want to assign and return to play mode.
+
+<Parameter>
+parameter Channel = 1 : Default MIDI channel
+
+<Code>
+static Int mode = 0;
+static Int midich = ${Channel};
+static uint8_t last_note = 0;
+static std::unordered_map<uint8_t, std::set<uint8_t>> note_map;
+if (@in0){
+    if (Midiglue::is_valid(in0)){
+        if (mode==0){
+            // play mode
+            if (in0.isNoteOn() && in0.getChannel() == midich){
+                if (note_map.count(in0.getNoteNumber())!=0){
+                    for (auto v : note_map[in0.getNoteNumber()]){
+                        out0 = MidiPacket::makeNoteOn(midich, v, in0.getVelocity());
+                    }
+                }
+                last_note = in0.getNoteNumber();
+                out1 = Midiglue::make_string(Music::Pitch::name_with_oct(in0.getNoteNumber()));
+            }else if (in0.isNoteOff() && in0.getChannel() == midich){
+                if (note_map.count(in0.getNoteNumber())!=0){
+                    for (auto v : note_map[in0.getNoteNumber()]){
+                        out0 = MidiPacket::makeNoteOff(midich, v);
+                    }
+                }
+            }
+        }else{
+            // rec mode
+            if (in0.isNoteOn() && in0.getChannel() == midich){
+                note_map[last_note].insert(in0.getNoteNumber());
+            }
+        }
+    }
+}else if (@in1){
+    midich = in1;
+}else if (@in2){
+    if (in2==0){
+        // Change to play mode
+        mode = 0;
+    }else{
+        // Change to rec mode
+        note_map[last_note].clear(); // Reset assign
+        mode = 1;
+    }
+}

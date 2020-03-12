@@ -1,0 +1,49 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set interval tick
+input Int : Set state Enable(1) / Disable(0)
+output Int : Bang output
+
+<Description>
+Metronome.
+Use the timediv node to set the interval tick.
+Set tempo with tempo_bpm or tempo_ext.
+
+<Parameter>
+parameter IntervalTick = 480 : Interval Tick
+parameter State = ["1", "0"] : Initial state
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static Int interval = ${IntervalTick};
+static Int state = ${State};
+static auto cb = [&](){
+    out0 = Midiglue::__bang;
+};
+static auto event = Midiglue::make_cyclic_tick_event<>(cb);
+static auto reschedule = [&](){
+    if (interval > 0 && state){
+        Midiglue::event_delay_t delay = interval;
+        event->schedule(delay);
+    }else{
+        event->cancel();
+    }
+};
+
+
+if (@in0){
+    // set interval (tick)
+    interval = in0;
+    reschedule();
+}else if (@in1){
+    state = in1;
+    reschedule();
+}
+else if (@setup){
+    reschedule();
+}

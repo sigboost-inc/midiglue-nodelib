@@ -1,0 +1,21 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Int value
+output Float : Float value
+
+<Description>
+Convert Int to Float.
+
+<Parameter>
+parameter Value = 0 : Default value
+
+<Code>
+static Float value = ${Value};
+if (@in0){
+    value = (Float)in0;
+    out0 = value;
+}
+

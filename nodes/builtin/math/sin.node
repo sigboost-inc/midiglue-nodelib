@@ -1,0 +1,56 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Reset
+input Float : Frequency
+input Float : Amplitude
+output Float : Output
+
+<Description>
+Output sine wave.
+
+<Parameter>
+parameter Ts = 500 : Sampling period (micro sec)
+parameter Freq = 10.0 : Frequency (Hz)
+parameter Amp = 1.0 : Amplitude
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static Float count = 0;
+static Float omega;
+static Float period;
+static Float amp = ${Amp};
+
+static auto cb = [&](){
+    count += ${Ts} / 1e6;
+    while (period != 0.0f && count > period) count -= period;
+    out0 = amp * sin(omega * count);
+};
+static auto event = Midiglue::make_cyclic_us_event<>(cb);
+
+if (@in0){
+    event->schedule(${Ts});
+}else if(@in1){
+    if (in1 == 0.0f) {
+        omega = 0.0f;
+        period = 0.0f;
+    }else{
+        omega = 2.0f * PI * in1;
+        period = 1.0f / in1;
+    }
+}else if(@in2){
+    amp = in2;
+}else if (@setup){
+    if (${Freq} == 0.0f) {
+        omega = 0.0f;
+        period = 0.0f;
+    }else{
+        omega = 2.0f * PI * ${Freq};
+        period = 1.0f / ${Freq};
+    }
+    event->schedule(${Ts});
+}

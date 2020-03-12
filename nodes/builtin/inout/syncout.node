@@ -1,0 +1,32 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Sync bang input
+
+<Description>
+Output SYNC signal.
+
+<Parameter>
+parameter Number = ["1", "2"] : Sync number
+parameter Inverse = false : Inverse polarity
+parameter Pulsewidth = 1000 : Gate pulse width in microsec
+
+<Requirements>
+require SYNC_Output_${Number}
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static const Int ZERO = ${Inverse} ? 1: 0;
+static const Int ONE = ${Inverse} ? 0: 1;
+static auto timeout_cbf = [&]{Midiglue::write(Midiglue::STEREOMINI_OUT_${Number}, 0, &ZERO, sizeof(Int), Midiglue::DataCategory::Logic);};
+static auto event = Midiglue::make_oneshot_us_event<>(timeout_cbf);
+if (@in0){
+    Midiglue::write(Midiglue::STEREOMINI_OUT_${Number}, 0, &ONE, sizeof(Int), Midiglue::DataCategory::Logic);
+    event->schedule(${Pulsewidth});
+}else if (@setup){
+    Midiglue::write(Midiglue::STEREOMINI_OUT_${Number}, 0, &ZERO, sizeof(Int), Midiglue::DataCategory::Logic);
+}

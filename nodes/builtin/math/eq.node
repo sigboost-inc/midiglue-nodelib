@@ -1,0 +1,29 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Number : Left operand, triggers the calculation
+input Number : Right operand, stored
+output Int : Condition is met
+output Int : Not met
+
+<Description>
+Output bang from the left output if left operand is equal to right operand,
+otherwise output bang from the right output.
+Output is triggered only by Left input.
+
+<Parameter>
+parameter Right = 0.0 : Default right value
+
+<Code>
+static number_t right = ${Right};
+if (@in0){
+    if (in0 == right){
+        out0 = Midiglue::__bang;
+    }else{
+        out1 = Midiglue::__bang;
+    }
+}else if (@in1){
+    right = in1;
+}

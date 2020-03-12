@@ -1,0 +1,34 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : DIN Sync clock pulse in
+input Int : DIN Sync continue(1)/stop(0) in
+
+<Description>
+Output DIN Sync signal.
+
+<Parameter>
+parameter State = ["Stop", "Continue"] : Initial state (continue(1)/stop(0))
+parameter Number = ["1", "2"] : DIN Sync number
+parameter Pulsewidth = 1000 : DIN Sync pulse width in microsec
+
+<Requirements>
+require DINSYNC_Output_${Number}
+
+<Code>
+static Int state = static_cast<Int>(Midiglue::ClockState::${State});
+static const Int ZERO = 0;
+static const Int ONE = 1;
+static auto timeout_cbf = [&]{Midiglue::write(Midiglue::DIN5PIN_OUT_${Number}, 0u, &ZERO, sizeof(Int), Midiglue::DataCategory::Logic);};
+static auto event = Midiglue::make_oneshot_us_event<>(timeout_cbf);
+if (@in0){
+    if (state){
+        Midiglue::write(Midiglue::DIN5PIN_OUT_${Number}, 0u, &ONE, sizeof(Int), Midiglue::DataCategory::Logic);
+        event->schedule(${Pulsewidth});
+    }
+}else if (@in1){
+    state = in1;
+    Midiglue::write(Midiglue::DIN5PIN_OUT_${Number}, 1u, &state, sizeof(Int), Midiglue::DataCategory::Logic);
+}

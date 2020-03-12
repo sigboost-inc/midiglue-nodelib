@@ -1,0 +1,43 @@
+<Comment>
+This file is template file for help you make new node.
+API documents and about midiglue node lang : "https://sigboost.audio/midiglue/manual/customnode/"
+
+Required sections:
+    - I/O
+    - Description
+    - Code
+Other setsions are not required. Please delete if necessary.
+
+<I/O>
+input Int : Port_description_here
+output Int : Port_description_here
+
+<Description>
+Write node description here.
+
+<Parameter>
+parameter ParamName = 1 : Parameter_description_here
+
+<Setup>
+/*
+    You can C++ style comment in <Setup> and <Code> section.
+    Be careful, you can't access variable of <Code> seciton in this section.
+    If you want, use bellow hack:
+*/
+${this}( &(Midiglue::__bang), Midiglue::SETUP ); // Call node function sepecialized @setup port. -> see the[*1]
+
+<Code>
+static Int foo = ${ParamName}; // You can use parameters to set initial values ​​for variables in this way.
+/*
+    You can use the static keyword to keep the value like a class member variable. 
+    If you do not add the static keyword, the value of the variable will be initialized each time the node is called.
+*/
+
+if (@in0){
+    // Write here the code when in0 port received data.
+    out0 = in0; // Send data from out0 port.
+}else if (@setup){
+    // [*1] Called from <Setup> section.
+    // This hack allows you to access variables in the <Code> section during setup.
+}
+

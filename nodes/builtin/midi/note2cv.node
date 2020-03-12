@@ -1,0 +1,82 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input MidiPacket : Raw MIDI packet & trigger output
+input Int : Set MIDI Channel
+input Int : Set Note number corresponding to 0 V.
+input Int : Set Portamento time (millisec)
+output Float : Pitch CV
+output Int : Gate
+
+<Description>
+Convert MIDI NoteOn/NoteOff to CV/GATE (V/Oct).
+
+<Parameter>
+parameter Channel = 1 : Default MIDI channel
+parameter BaseNum = 34 :  Default note number corresponding to 0 V
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+// NOTE : v = (notenum-basenum)*(1/12)
+static Int channel = ${Channel};
+static Int basenum = ${BaseNum};
+static Int portamento_steps = 1;
+static Int notecount = 0;
+static Float current_pitch = 0.0f;
+static Float pitch_step = 0.0f;
+static Int current_portamento_steps = 1;
+static Int portamento_counter = 1;
+static Int note = 0;
+
+static auto change_pitch = [&](){
+    current_portamento_steps = portamento_steps;
+    Float target_pitch = (note - basenum)*(1.0f/12.0f);
+    pitch_step = (Float)(target_pitch - current_pitch) / (Float)(current_portamento_steps);
+    portamento_counter = 1;
+    current_pitch += pitch_step;
+};
+
+static auto update_pitch = [&](){
+    if (portamento_counter < current_portamento_steps){
+        portamento_counter++;
+        current_pitch += pitch_step;
+        out0 = current_pitch;
+    }
+};
+static auto pitch_update_event = Midiglue::make_cyclic_us_event<>(update_pitch);
+
+if (@in0){
+    if (Midiglue::is_valid(in0) && (in0.isNoteOn() || in0.isNoteOff())){
+        uint8_t ch = in0.getChannel(); // channel
+        note = in0.getNoteNumber(); // notenum
+        if (ch == channel){
+            if (in0.isNoteOn()) {
+                change_pitch();
+                ++notecount;
+            }
+            else {
+                --notecount;
+            }
+            // to voltage
+            out0 = current_pitch;
+            out1 = notecount;
+        }
+    }
+} else if (@in1){
+    channel = in1;
+} else if (@in2){
+    basenum = in2;
+} else if (@in3){
+    if (in3 > 0){
+        portamento_steps = in3 * 1000 / (Midiglue::CV_PERIOD_US * Midiglue::CV_RESAMPLE_FACTOR) + 1;
+    }
+} else if (@setup){
+    pitch_update_event->schedule(Midiglue::CV_PERIOD_US * Midiglue::CV_RESAMPLE_FACTOR);
+    out0 = current_pitch;
+    out1 = notecount;
+}
+
