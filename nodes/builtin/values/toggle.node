@@ -10,7 +10,7 @@ output Int : Output
 Every time an input comes in, 0 and 1 are alternately outputted.
 
 <Parameter>
-parameter Invert = ["false"] : Invert output (initial output is 1)
+parameter Invert = ["false", "true"] : Invert output (initial output is 1)
 
 <Setup>
 ${this}( &(Midiglue::__bang), Midiglue::SETUP );

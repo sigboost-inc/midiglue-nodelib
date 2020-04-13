@@ -9,6 +9,7 @@ output MidiPacket : Output
 
 <Description>
 Send MIDI Timing Clock packets.
+Use the "syncbang" node to generate a clock signal.
 
 <Parameter>
 parameter State = ["Stop", "Start", "Continue"] : Initial state (start(2)/continue(1)/stop(0))

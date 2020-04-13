@@ -23,7 +23,7 @@ static Float out_max = ${OutputMax};
 if (@in0) {
     Float val = in0;
     if (val-in_min == 0 || in_max-in_min == 0){
-        out0 = 0.0;
+        out0 = out_min;
     }else{
         out0 = (val-in_min) / (Float)(in_max-in_min) * (out_max-out_min) + out_min;
     }

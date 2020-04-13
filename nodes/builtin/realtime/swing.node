@@ -27,23 +27,24 @@ ${this}( &(Midiglue::__bang) , Midiglue::SETUP );
 static Int interval = ${IntervalTick};
 static Float swing = ${Swing};
 static Int state = ${State};
-static Midiglue::event_delay_t delay_base;
-static Midiglue::event_delay_t delay_swing;
+static Midiglue::event_delay_t delay_base; // tick
+static Midiglue::event_delay_t delay_swing; // us
 
 static auto cb_swing = [&](){
     out0 = Midiglue::__bang;
 };
-static auto event_swing = Midiglue::make_oneshot_tick_event<>(cb_swing);
+static auto event_swing = Midiglue::make_oneshot_us_event<>(cb_swing);
 static auto cb_base = [&](){
     out0 = Midiglue::__bang;
-    if (state)
+    if (state){
+        delay_swing = Music::Rhythm::tick2us(delay_base * swing, Midiglue::get_bpm(), Midiglue::TPQN);
         event_swing->schedule(delay_swing);
+    }
 };
 static auto event_base = Midiglue::make_cyclic_tick_event<>(cb_base);
 static auto reschedule = [&]{
     if (interval > 0 && state){
         delay_base = interval * 2;
-        delay_swing = delay_base * swing;
         event_base->schedule(delay_base);
     }else{
         event_base->cancel();
@@ -57,7 +58,6 @@ if (@in0){
     reschedule();
 }else if (@in1){
     swing = std::min(std::max(0.0f, in1), 1.0f);
-    delay_swing = delay_base * swing;
 }else if (@in2){
     state = in2;
     reschedule();

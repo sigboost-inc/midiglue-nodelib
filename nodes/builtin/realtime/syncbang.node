@@ -15,7 +15,7 @@ To use this node, master tempo must be set up with tempo_bpm or tempo_ext node!!
 
 <Parameter>
 parameter PPQN = 1 : Pulses per quarter note
-parameter State = ["1", "0"] : Initial state
+parameter State = ["1", "0"] : Initial state. Enable(1) / Disable(0)
 
 <Setup>
 ${this}( &(Midiglue::__bang) , Midiglue::SETUP );

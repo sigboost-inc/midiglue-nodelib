@@ -1,0 +1,79 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Clock
+input MidiPacket : MIDI Notes for record pattern
+input Int : Function (0 skip)
+input Int : Edit (1 on / 0 off)
+input Int : Reset index
+output Int : Note Number
+output Int : Velocity
+
+<Description>
+Step Sequencer.
+Outputs each time Clock is input.
+Record the sequence using MIDI input.
+When you turn on edit mode, the patterns inside will be erased.
+
+<Parameter>
+parameter Channel = 0 : MIDI channel for input. 0 = do not care.
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static Sequencer::Seq seq;
+static Int ch = ${Channel};
+static Int index = 0;
+static bool edit = false;
+static auto init_index = [&]{
+    index = 0;
+};
+static auto next_index = [&]{
+    index += 1;
+    if (seq.steps.size() <= index){
+        index = 0;
+    }
+};
+
+if (@in0){
+    // play
+
+    if (seq.steps.size()==0){
+        return;
+    }
+    index = std::clamp(index, 0, (int)seq.steps.size()-1);
+    for (auto& note : seq.steps[index].notes){
+        out1 = note.velocity;
+        out0 = note.notenum;
+    }
+
+    // determine index for next play
+    next_index();
+}
+else if (@in1){
+    if (edit){
+        if (in1.isNote() && (ch==0 || in1.getChannel()==ch)) {
+            bool input_end = seq.record(in1);
+            if (input_end){
+                init_index();
+            }
+        }
+    }
+}else if (@in2){
+    if (in2 == 0){
+        // skip
+        if (edit){
+            seq.record();
+        }
+    }
+}else if (@in3){
+    edit = (in3>0) ? true : false;
+    if (edit){
+        seq.reset();
+    }
+}else if (@in4){
+    index = 0;
+}

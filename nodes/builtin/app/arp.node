@@ -12,6 +12,7 @@ output Int : Velocity
 output String : Mode name
 
 <Description>
+Arpeggiater.
 Outputs each time Clock is input.
 The notes to be arpeggiated are specified by the midi input.
 Notes are recorded in the order in which you press the keys.
@@ -24,8 +25,7 @@ parameter Channel = 1 :  Default MIDI channel
 ${this}( &(Midiglue::__bang), Midiglue::SETUP );
 
 <Code>
-static std::vector<std::pair<uint8_t, uint8_t>> notes; //notenum, vel
-static std::vector<std::pair<uint8_t, uint8_t>> play_notes; //notenum, vel
+static Sequencer::Step step;
 static Int ch = ${Channel};
 static bool hold = true;
 static Int mode = 0;
@@ -40,24 +40,24 @@ static auto init_index = [&]{
             index = 0;
             break;
         case 1:
-            index = play_notes.size()-1;
+            index = step.notes.size()-1;
             break;
         case 3:
-            index = Random::gen(0, play_notes.size()-1);
+            index = Random::gen(0, step.notes.size()-1);
     }
 };
 static auto next_index = [&]{
     if (mode==0){
         // up
         index++;
-        if (play_notes.size() <= index){
+        if (step.notes.size() <= index){
             index = 0;
         }
     }else if (mode==1){
         // down
         index--;
         if (index < 0){
-            index = play_notes.size()-1;
+            index = step.notes.size()-1;
         }
     }else if (mode==2){
         // exc
@@ -66,13 +66,13 @@ static auto next_index = [&]{
         if (index < 0){
             index = 0;
             dir = -dir;
-        }else if (play_notes.size() <= index){
-            index = play_notes.size()-1;
+        }else if (step.notes.size() <= index){
+            index = step.notes.size()-1;
             dir = -dir;
         }
     }else if (mode==3){
         // rand
-        index = Random::gen(0, play_notes.size()-1);
+        index = Random::gen(0, step.notes.size()-1);
     }
 };
 static auto mode_name = [&]{
@@ -92,39 +92,26 @@ static auto mode_name = [&]{
 
 
 if (@in0){
-    if (play_notes.size()==0){
+    if (step.notes.size()==0){
         return;
     }
-    index = std::clamp(index, 0, (int)play_notes.size()-1);
-    out1 = play_notes[index].second; // velocity
-    out0 = play_notes[index].first; // notenum
+    index = std::clamp(index, 0, (int)step.notes.size()-1);
+    out1 = step.notes[index].velocity;
+    out0 = step.notes[index].notenum;
 
     // determine index for next play
     next_index();
 }
 else if (@in1){
-    if (in1.isNoteOn() && in1.getChannel() == ch) {
-        if (notes.size()==0){
-            play_notes.clear();
+    if (in1.isNote() && in1.getChannel() == ch) {
+        bool input_end = step.record(in1, hold);
+        if (input_end){
+            init_index();
         }
-        auto itr = std::find_if( notes.begin(), notes.end(), [&](std::pair<uint8_t,uint8_t> p){return p.first==in1.getNoteNumber();} );
-        if (itr == notes.end()){
-            notes.push_back( std::make_pair(in1.getNoteNumber(), in1.getVelocity()) );
-            play_notes.push_back( std::make_pair(in1.getNoteNumber(), in1.getVelocity()) );
-        }
-    }else if (in1.isNoteOff() && in1.getChannel() == ch){
-        auto itr = std::find_if( notes.begin(), notes.end(), [&](std::pair<uint8_t,uint8_t> p){return p.first==in1.getNoteNumber();} );
-        if (itr != notes.end()) {
-            notes.erase(itr);
-            if (!hold) {
-                auto itr2 = std::find_if( play_notes.begin(), play_notes.end(), [&](std::pair<uint8_t,uint8_t> p){return p.first==in1.getNoteNumber();} );
-                if (itr2 != notes.end()) play_notes.erase(itr2);
-            }
-        }
-        if (play_notes.size()==0) init_index();
     }
 }else if (@in2){
     hold = (in2>0) ? true : false;
+    step.reset();
 }else if (@in3){
     mode = std::clamp(in3, 0, 3);
     init_index();
