@@ -14,21 +14,15 @@ Otherwise no SysEx message is sent out.
 <Parameter>
 parameter Message = "0xF0, 0xF7" : Comma-separated list of message bytes including F0 and F7
 
-<Setup>
-${this}( &(Midiglue::__bang), Midiglue::SETUP );
-
 <Code>
 static const std::vector<uint8_t> message{${Message}};
-static MidiSysEx sysex;
+static MidiSysEx sysex(message.size(), message.data());
 
 if (@in0){
-    if (sysex.buf) {
+    if (Midiglue::is_valid(sysex)){
         out0 = sysex;
     }
-}else if (@setup){
-    size_t size = message.size();
-    if (size <= Midiglue::SYSEX_MAX_LENGTH && message.at(0) == 0xf0 && message.at(size-1) == 0xf7) {
-        sysex.len = size;
-        sysex.buf = message.data();
+    else{
+        Midiglue::Debug::write_log("sysex_node: invalid");
     }
 }
