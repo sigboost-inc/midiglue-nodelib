@@ -33,4 +33,9 @@ Create pull requests and issues to share your unique ideas. We are waiting for y
 
 ## Licenses
 
-midiglue-nodelib is released under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+### `nodes/builtin` `flows/defaults` `flows/presets` `flows/samples`
+Released under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+### `nodes/community`
+License and author is described in each source code.
+For now everything is released under the MIT license. https://opensource.org/licenses/MIT
