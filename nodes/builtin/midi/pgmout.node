@@ -1,0 +1,29 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Int : Set program number & trigger output
+input Int : Set MIDI channnel
+output MidiPacket : Output
+
+<Description>
+Construct MIDI Program Change packet.
+
+<Parameter>
+parameter Channel = 1 : Default MIDI channel
+
+<Code>
+static uint8_t number = 0;
+static uint8_t midich = ${Channel};
+
+if (@in0){
+    number = in0;
+    auto packet = MidiPacket::makeProgramChange(midich, number);
+    out0 = packet;
+}else if (@in1){
+    midich = in1;
+    if (midich < 1 || 16 < midich){
+        midich = 1;
+    }
+}

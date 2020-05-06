@@ -4,7 +4,7 @@ This file is licensed under a Creative Commons Attribution 4.0 International (CC
 
 <I/O>
 input MidiPacket : MIDI input
-input Int : MIDI channel
+input Int : MIDI channel for output notes
 input Int : Mode (0=play, 1=rec)
 output MidiPacket : MIDI output
 output String : Assign to (note name)
@@ -16,41 +16,44 @@ To assign a chord to a note, change to rec mode while you pressing a note you wa
 Then play the chord you want to assign and return to play mode.
 
 <Parameter>
-parameter Channel = 1 : Default MIDI channel
+parameter PlayChannel = 0 : MIDI channel for play(input). 0 = do not care.
+parameter RecChannel = 0 : MIDI channel for record(input). 0 = do not care.
+parameter OutChannel = 1 : MIDI channel for output notes.
+
 
 <Code>
 static Int mode = 0;
-static Int midich = ${Channel};
+static Int out_midich = std::clamp(${OutChannel}, 1, 16);
 static uint8_t last_note = 0;
 static std::unordered_map<uint8_t, std::set<uint8_t>> note_map;
 if (@in0){
     if (Midiglue::is_valid(in0)){
         if (mode==0){
             // play mode
-            if (in0.isNoteOn() && in0.getChannel() == midich){
+            if (in0.isNoteOn() && (${PlayChannel}==0 || in0.getChannel() == ${PlayChannel})){
                 if (note_map.count(in0.getNoteNumber())!=0){
                     for (auto v : note_map[in0.getNoteNumber()]){
-                        out0 = MidiPacket::makeNoteOn(midich, v, in0.getVelocity());
+                        out0 = MidiPacket::makeNoteOn(out_midich, v, in0.getVelocity());
                     }
                 }
                 last_note = in0.getNoteNumber();
                 out1 = Midiglue::make_string(Music::Pitch::name_with_oct(in0.getNoteNumber()));
-            }else if (in0.isNoteOff() && in0.getChannel() == midich){
+            }else if (in0.isNoteOff() && (${PlayChannel}==0 || in0.getChannel() == ${PlayChannel})){
                 if (note_map.count(in0.getNoteNumber())!=0){
                     for (auto v : note_map[in0.getNoteNumber()]){
-                        out0 = MidiPacket::makeNoteOff(midich, v);
+                        out0 = MidiPacket::makeNoteOff(out_midich, v);
                     }
                 }
             }
         }else{
             // rec mode
-            if (in0.isNoteOn() && in0.getChannel() == midich){
+            if (in0.isNoteOn() && (${RecChannel}==0 || in0.getChannel() == ${RecChannel})){
                 note_map[last_note].insert(in0.getNoteNumber());
             }
         }
     }
 }else if (@in1){
-    midich = in1;
+    out_midich = std::clamp(in1, 1, 16);
 }else if (@in2){
     if (in2==0){
         // Change to play mode

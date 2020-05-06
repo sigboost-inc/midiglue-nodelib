@@ -14,18 +14,21 @@ parameter InputMin = 0 : Input min
 parameter InputMax = 127 : Input max
 parameter OutputMin = 0.0 : Output min
 parameter OutputMax = 1.0 : Output max
+parameter Curve = 1.0 : Curve using Power. y = x^n (1.0 Linear, <1.0 Log curve like, 1.0< Exp curve like)
 
 <Code>
 static number_t in_min = ${InputMin};
 static number_t in_max = ${InputMax};
 static Float out_min = ${OutputMin};
 static Float out_max = ${OutputMax};
+static Float curve = ${Curve};
 if (@in0) {
     Float val = in0;
     if (val-in_min == 0 || in_max-in_min == 0){
         out0 = out_min;
     }else{
-        out0 = (val-in_min) / (Float)(in_max-in_min) * (out_max-out_min) + out_min;
+        Float normalized = (val-in_min) / (Float)(in_max-in_min);
+        out0 = pow(normalized, curve) * (out_max-out_min) + out_min;
     }
 }
 

@@ -11,7 +11,7 @@ output MidiPacket : Not matches
 Check the type of MIDI Packet.
 
 <Parameter>
-parameter Type = ["Note", "NoteOn", "NoteOff", "ControlChange", "PitchBend"] : MIDI Type
+parameter Type = ["Note", "NoteOn", "NoteOff", "ControlChange", "PitchBend", "ProgramChange"] : MIDI Type
 
 <Code>
 if (@in0){
