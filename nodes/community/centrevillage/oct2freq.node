@@ -1,0 +1,33 @@
+<Comment>
+Octave to Frequency converter
+
+MIT License Copyright (c) 2020 centrevillage
+
+<I/O>
+input Float : Octave
+output Float : Freq
+
+<Description>
+Octave to Frequency converter
+
+<Parameter>
+parameter BaseFreq = 440.0 : Base Frequency
+parameter OctaveOffset = -5 : Octave Offset(Int)
+parameter RootKey = 3 : Root Key (0=A, 1=A#, 2=B, 3=C, ... 11=G#)
+
+<Code>
+static const float root_freq_mult = []{
+  if (${OctaveOffset} > 0 ) {
+    return 2.0f*(float)${OctaveOffset};
+  }
+  if (${OctaveOffset} < 0) {
+    return 1.0f/(2.0f*fabsf(${OctaveOffset}));
+  }
+  return 1.0f;
+}();
+static const float root_freq = (float)${BaseFreq} * root_freq_mult;
+static const float root_key = (float)(${RootKey} < 0 ? 0 : (${RootKey} > 11 ? 11 : ${RootKey}));
+
+if (@in0) {
+  out0 = root_freq * powf(2.0, in0 + (root_key/12.0));
+}
