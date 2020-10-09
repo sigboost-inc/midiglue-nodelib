@@ -1,0 +1,230 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : start / end game
+input Any : pause
+input Number : user L pos. 0 - 52
+input Number : user R pos. 0 - 52
+input Number : push L
+input Number : push R
+output Int : pitch
+
+<Description>
+This is a ping-pong game that can be played by 2 player.
+It is a sample program of GUI control by node.
+Game operation input must be given from the node input port.
+The following list is a settings example. See the sample flow for details.
+
+A : Start/Stop game.
+B : Reset game.
+L/R knob : Move bar.
+L/R button : If you press this button at the just time, you will push the bar to accelerate the ball and hit it back.
+
+
+<Setup>
+${this}( &(Midiglue::__bang), Midiglue::SETUP );
+
+<Code>
+static auto& gui = UserGUI::get_instance();
+static int userL = 0;
+static int userR = 0;
+static int userLbtn = 0;
+static int userRbtn = 0;
+/*
+game_state:
+    0 play
+    1 pause
+    2 L hold
+    3 R hold
+*/
+static int game_state = 1;
+
+// #1
+static auto cb_outnotenum = [&](uint8_t num){
+    out0 = num;
+};
+static auto event = Midiglue::make_oneshot_us_event<uint8_t>(cb_outnotenum);
+static auto send = [&](uint8_t num){
+    event->schedule(2000, num); // call 2ms after
+};
+
+/*
+    This function is called for each drawing frame.
+
+    NOTE:
+    This function is called directly from FW drawing thread.
+    Therefore, it is dangerous to access the node output directly from within this function.
+    If you do this, the processing of subsequent nodes will be executed in the drawing thread,
+    and the system will become unstable.
+    To avoid this, use the scheduler. -> #1
+*/
+static auto game_main = [&](){
+    constexpr auto Black = UserGUI::Black;
+    constexpr auto White = UserGUI::White;
+    constexpr auto Width = UserGUI::DisplayWidth; // 128 px
+    constexpr auto Height = UserGUI::DisplayHeight; // 64 px
+    constexpr auto bar_len = 12;
+    constexpr auto dec_rate = 0.999;
+    static Graphics::Vector2D ball = {Width/2, Height/2};
+    static Graphics::Vector2D dir = {1.0, 1.0};
+    static bool frame = false;
+    static bool goalL = false;
+    static bool goalR = false;
+    static int pointL = 0;
+    static int pointR = 0;
+
+    if (game_state == 0){
+        // top&bottom collision
+        if (ball.y > Height){
+            dir.y = -dir.y;
+            send(60);
+        }
+        if (ball.y < 0){
+            dir.y = -dir.y;
+            send(60);
+        }
+
+        // move ball
+        ball.x += dir.x;
+        ball.y += dir.y;
+
+        // deceleration moving speed
+        dir.x = dir.x*dec_rate;
+        dir.y = dir.y*dec_rate;
+
+        // side collision
+        if (ball.x > Width){ // R side
+            if (userR-2 <= ball.y && ball.y <= userR+bar_len+2){
+                dir.x = -dir.x;
+                if(userRbtn==1){
+                    dir.x = -1.8;
+                    frame = true;
+                    send(76);
+                }else{
+                    send(67);
+                }
+                if(ball.y < userR || userR+bar_len < ball.y){
+                    dir.y = std::clamp(dir.y*5.0, -1.5, 1.5);
+                }
+            }else{
+                // miss
+                goalR = true;
+                game_state = 3;
+                pointL++;
+                send(55);
+            }
+        }
+        if (ball.x < 0){ // L side
+            if (userL-2 <= ball.y && ball.y <= userL+bar_len+2){
+                dir.x = -dir.x;
+                if(userLbtn==1){
+                    dir.x = 1.8;
+                    frame = true;
+                    send(76);
+                }else{
+                    send(67);
+                }
+                if(ball.y < userL || userL+bar_len < ball.y){
+                    dir.y = std::clamp(dir.y*5.0, -1.5, 1.5);
+                }
+
+            }else{
+                // miss
+                goalL = true;
+                game_state = 2;
+                pointR++;
+                send(55);
+            }
+        }
+    }else if (game_state == 1){
+        ball.x = Width/2;
+        ball.y = Height/2;
+        dir.x = 1.0;
+        dir.y = 1.0;
+    }else if (game_state == 2){
+        // L
+        dir.x = 0;
+        dir.y = 0;
+        ball.x = 5;
+        ball.y = userL + bar_len/2;
+        if (userLbtn==1 && !goalL){
+            dir.x = 1.0;
+            dir.y = 1.0;
+            game_state = 0;
+        }
+    }else if (game_state == 3){
+        // R
+        dir.x = 0;
+        dir.y = 0;
+        ball.x = Width-1-5;
+        ball.y = userR + bar_len/2;
+        if (userRbtn==1 && !goalR){
+            dir.x = -1.0;
+            dir.y = 1.0;
+            game_state = 0;
+        }
+    }
+
+    // render
+    gui.display->fillRect(0, 0, Width, Height, Black);
+    if (frame){
+        gui.display->drawRect(0, 0, Width, Height, White);
+        frame = false;
+    }
+    if (goalL){
+        gui.display->fillRect(0, 0, 3, Height, White);
+        goalL = false;
+    }
+    if (goalR){
+        gui.display->fillRect(Width-3-1, 0, 3, Height, White);
+        goalR = false;
+    }
+    gui.display->drawLine(0, userL, 0, userL+bar_len, White);
+    gui.display->drawLine(Width-1, userR, Width-1, userR+bar_len, White);
+    gui.display->fillRect(std::round(ball.x-1), std::round(ball.y-1), 3, 3, White);
+    gui.display->setTextSize(1);
+    if (game_state == 1){
+        gui.display->setCursor(Width/2-12, Height/2+8);
+        gui.display->printf("READY?");
+        pointL = 0;
+        pointR = 0;
+    }
+    gui.display->setCursor(Width/2-12, Height-8);
+    gui.display->printf("%d - %d", pointL, pointR);
+};
+
+
+
+
+if (@in0){
+    if (in0==1){
+        /*
+            Pass the lambda function to FW and enable UserGUI.
+            When the UserGUI is turned on, the drawing by FW is invalidated,
+            so be sure to prepare a method to restore it.
+        */
+        gui.enable(game_main);
+        gui.fps = 45;
+    }else{
+        gui.disable();
+    }
+}else if(@in1){
+    if (in1==1){
+        game_state = 1;
+    }else{
+        game_state = 0;
+    }
+}else if(@in2){
+    userL = in2;
+}else if(@in3){
+    userR = in3;
+}else if(@in4){
+    userLbtn = in4;
+}else if(@in5){
+    userRbtn = in5;
+}else if(@setup){
+    gui.enable(game_main);
+    gui.fps = 45;
+}

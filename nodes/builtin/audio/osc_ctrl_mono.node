@@ -1,0 +1,116 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Audio Processing Trigger
+input MidiPacket : midi input
+input Number : Attack Time (ms)
+input Number : Decay Time (ms)
+input Float : Sustain Level (0 - 1.0)
+input Number : Release Time (ms)
+output Signal : amplitude
+output Signal : frequency
+
+<Description>
+Oscillator controller for monophonic synthesizer.
+Outputs frequency and amplitude from midi notes.
+
+<Parameter>
+parameter Attack = 30.0 : Attack Time (ms)
+parameter Decay = 10.0 : Decay Time (ms)
+parameter Sustain = 0.8 : Sustain Level (0 - 1.0)
+parameter Release = 300.0 : Release Time (ms)
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static Float atk = ${Attack};
+static Float dcy = ${Decay};
+static Float sus = ${Sustain};
+static Float rel = ${Release};
+static FloatList freq_out{Midiglue::init_default<FloatList>()};
+static FloatList amp_out{Midiglue::init_default<FloatList>()};
+
+static Int state = 0;
+static Int velocity = 0;
+static Int notenum = 0;
+static Int active_notes = 0;
+
+static Float amp = 0.0;
+
+/*
+0 : wait
+1 : attack
+2 : decay
+3 : sustain
+4 : release
+*/
+static auto adsr = [&](float& _amp, int& _state){
+    // TODO: implement exp curve
+    switch(_state){
+    case 0:
+        _amp = 0.0;
+        break;
+    case 1:
+        _amp += 1.0/atk;
+        if (_amp >= 1.0){
+            _amp = 1.0;
+            _state = 2;
+        }
+        break;
+    case 2:
+        _amp -= (1.0-sus)/dcy;
+        if (_amp <= sus){
+            _amp = sus;
+            _state = 3;
+        }
+        break;
+    case 3:
+        _amp = sus;
+        break;
+    case 4:
+        _amp -= sus/rel;
+        if(_amp <= 0.0){
+            _amp = 0.0;
+            _state = 0;
+        }
+    }
+};
+
+if (@in0){
+    // audio proc
+    // calc per vec proc
+    adsr(amp, state);
+    std::fill(amp_out->begin(), amp_out->end(), amp);
+    std::fill(freq_out->begin(), freq_out->end(), Music::Pitch::notenum_to_freq(notenum));
+    out1 = freq_out;
+    out0 = amp_out;
+}else if (@in1){
+    // midi input
+    if (Midiglue::is_valid(in1) && in1.isNote()){
+        if (in1.isNoteOn()){
+            state = 1;
+            active_notes++;
+            velocity = in1.getVelocity();
+            notenum = in1.getNoteNumber();
+        }else{
+            active_notes--;
+            if (active_notes <= 0){
+                state = 4;
+            }
+        }
+    }
+}else if (@in2){
+    atk = std::clamp(in2, 1, 2000);
+}else if (@in3){
+    dcy = in3;
+}else if (@in4){
+    sus = in4;
+}else if (@in5){
+    rel = in5;
+}else if (@setup){
+    freq_out->resize(Midiglue::AUDIO_VEC_SIZE);
+    amp_out->resize(Midiglue::AUDIO_VEC_SIZE);
+}

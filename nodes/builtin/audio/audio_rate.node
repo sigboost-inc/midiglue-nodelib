@@ -1,0 +1,25 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+output Int : Audio Processing Trigger
+
+<Description>
+Start calculation for audio output.
+Output bang for each signal vector. Use this bang as a trigger to perform subsequent calculations.
+
+<Parameter>
+parameter Number = ["1", "2"] : Jack number of CV output
+
+<Requirements>
+require CV_Output_Vec_${Number}
+
+<Setup>
+Midiglue::attach(Midiglue::STEREOMINI_OUT_${Number}, ${this}, 0, Midiglue::DataCategory::U32);
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+if (@jackin0){
+    out0 = 0;
+}

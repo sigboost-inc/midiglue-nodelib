@@ -1,0 +1,26 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Signal : Input
+output Any : Second output
+output Any : First output
+
+<Description>
+Send input signals in a fixed order (out1 -> out0).
+The FloatList on the input is used for output #0.
+Creates a new FloatList for output #1.
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static FloatList buf{Midiglue::init_default<FloatList>()};
+if (@in0){
+    std::copy(in0->begin(), in0->end(), buf->begin());
+    out1 = buf;
+    out0 = in0;
+}else if (@setup){
+    buf->resize(Midiglue::AUDIO_VEC_SIZE);
+}

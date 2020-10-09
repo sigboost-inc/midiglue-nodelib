@@ -1,0 +1,32 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Signal : Input
+
+<Description>
+CV Output from FloatList with sample rate of 40kHz. It can be treated as an audio output.
+NOTE:
+midiglue is not designed to handle audio input and output. This feature is an extension for hackers and use at your own risk.
+
+<Parameter>
+parameter Number = ["1", "2"] : Jack number of CV output
+
+<Requirements>
+require CV_Output_Vec_${Number}
+
+<Setup>
+Midiglue::attach(Midiglue::STEREOMINI_OUT_${Number}, ${this}, 0, Midiglue::DataCategory::U32);
+
+<Code>
+static std::array<Float, Midiglue::AUDIO_VEC_SIZE> output{};
+
+if (@jackin0){
+    const uint32_t buf_size = *(uint32_t*)(_data);
+    Midiglue::write(Midiglue::STEREOMINI_OUT_${Number}, 0, output.data(), sizeof(Float) * buf_size, Midiglue::DataCategory::VoltageArray);
+}else if (@in0){
+    if (in0->size() >= Midiglue::AUDIO_VEC_SIZE){
+        std::copy_n(in0->begin(), Midiglue::AUDIO_VEC_SIZE, output.begin());
+    }
+}

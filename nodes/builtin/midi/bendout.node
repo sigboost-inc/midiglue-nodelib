@@ -14,7 +14,7 @@ Construct MIDI PitchBend packet.
 parameter Channel = 1 : Default MIDI channel
 
 <Code>
-static uint8_t value = 0;
+static int16_t value = 0;
 static uint8_t midich = ${Channel};
 
 if (@in0){

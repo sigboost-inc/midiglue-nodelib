@@ -5,8 +5,8 @@ This file is licensed under a Creative Commons Attribution 4.0 International (CC
 <I/O>
 input MidiPacket : MIDI input & trigger output
 input Int : Set threshold
-output MidiPacket : Output 1
-output MidiPacket : Output 2
+output MidiPacket : Low
+output MidiPacket : High
 
 <Description>
 Split incoming NoteOn/NoteOff packets to 2 output ports based on note number.

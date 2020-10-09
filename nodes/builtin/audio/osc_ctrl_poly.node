@@ -1,0 +1,168 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Audio Processing Trigger
+input MidiPacket : midi input
+input Number : Attack Time (ms)
+input Number : Decay Time (ms)
+input Float : Sustain Level (0 - 1.0)
+input Number : Release Time (ms)
+output Signal : amplitude #1
+output Signal : frequency #1
+output Signal : amplitude #2
+output Signal : frequency #2
+output Signal : amplitude #3
+output Signal : frequency #3
+output Signal : amplitude #4
+output Signal : frequency #4
+
+<Description>
+Oscillator controller for 4 voices polyphonic synthesizer.
+Outputs frequency and amplitude from midi notes.
+
+<Parameter>
+parameter Attack = 30.0 : Attack Time (ms)
+parameter Decay = 10.0 : Decay Time (ms)
+parameter Sustain = 0.8 : Sustain Level (0 - 1.0)
+parameter Release = 300.0 : Release Time (ms)
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static Float atk = ${Attack};
+static Float dcy = ${Decay};
+static Float sus = ${Sustain};
+static Float rel = ${Release};
+
+static constexpr int poly_n = 4;
+static std::array<FloatList,4> freq_out;
+static std::array<FloatList,4> amp_out;
+static Int state[poly_n] = {0};
+static Int velocity[poly_n] = {0};
+static Int notenum[poly_n] = {0};
+static Float amp[poly_n] = {0.0};
+
+static int voice_idx = 0;
+
+/*
+0 : wait
+1 : attack
+2 : decay
+3 : sustain
+4 : release
+*/
+
+static auto adsr = [&](float& _amp, int& _state){
+    // TODO: implement exp curve
+    switch(_state){
+    case 0:
+        _amp = 0.0;
+        break;
+    case 1:
+        _amp += 1.0/atk;
+        if (_amp >= 1.0){
+            _amp = 1.0;
+            _state = 2;
+        }
+        break;
+    case 2:
+        _amp -= (1.0-sus)/dcy;
+        if (_amp <= sus){
+            _amp = sus;
+            _state = 3;
+        }
+        break;
+    case 3:
+        _amp = sus;
+        break;
+    case 4:
+        _amp -= sus/rel;
+        if(_amp <= 0.0){
+            _amp = 0.0;
+            _state = 0;
+        }
+    }
+};
+
+if (@in0){
+    // audio proc
+    // calc per vec proc
+    int n = 0;
+    adsr(amp[n], state[n]);
+    std::fill(amp_out[n]->begin(), amp_out[n]->end(), amp[n]);
+    std::fill(freq_out[n]->begin(), freq_out[n]->end(), Music::Pitch::notenum_to_freq(notenum[n]));
+    out7 = freq_out[n];
+    out6 = amp_out[n];
+
+    n = 1;
+    adsr(amp[n], state[n]);
+    std::fill(amp_out[n]->begin(), amp_out[n]->end(), amp[n]);
+    std::fill(freq_out[n]->begin(), freq_out[n]->end(), Music::Pitch::notenum_to_freq(notenum[n]));
+    out5 = freq_out[n];
+    out4 = amp_out[n];
+
+    n = 2;
+    adsr(amp[n], state[n]);
+    std::fill(amp_out[n]->begin(), amp_out[n]->end(), amp[n]);
+    std::fill(freq_out[n]->begin(), freq_out[n]->end(), Music::Pitch::notenum_to_freq(notenum[n]));
+    out3 = freq_out[n];
+    out2 = amp_out[n];
+
+    n = 3;
+    adsr(amp[n], state[n]);
+    std::fill(amp_out[n]->begin(), amp_out[n]->end(), amp[n]);
+    std::fill(freq_out[n]->begin(), freq_out[n]->end(), Music::Pitch::notenum_to_freq(notenum[n]));
+    out1 = freq_out[n];
+    out0 = amp_out[n];
+}else if (@in1){
+    // midi input
+    if (Midiglue::is_valid(in1) && in1.isNote()){
+        if (in1.isNoteOn()){
+            for(int i=0; i<poly_n; ++i){
+                int v = (voice_idx + i) & 0b11;
+                if(state[v] == 0){
+                    state[v] = 1;
+                    velocity[v] = in1.getVelocity();
+                    notenum[v] = in1.getNoteNumber();
+                    ++voice_idx;
+                    break;
+                }
+                if(i == poly_n-1){
+                    // all voices are busy. steal other voice
+                    v = voice_idx & 0b11;
+                    state[v] = 1;
+                    velocity[v] = in1.getVelocity();
+                    notenum[v] = in1.getNoteNumber();
+                    ++voice_idx;
+                }
+            }
+        }else{
+            for(int i=0; i<poly_n; ++i){
+                if(notenum[i] == in1.getNoteNumber()){
+                    state[i] = 4;
+                }
+            }
+        }
+    }
+}else if (@in2){
+    atk = std::clamp(in2, 1, 2000);
+}else if (@in3){
+    dcy = in3;
+}else if (@in4){
+    sus = in4;
+}else if (@in5){
+    rel = in5;
+}else if (@setup){
+    for(int i=0; i<poly_n; ++i){
+        for(int i=0; i<poly_n; ++i){
+            freq_out[i] = Midiglue::make_list<Float>({});
+            freq_out[i]->resize(Midiglue::AUDIO_VEC_SIZE);
+            amp_out[i] = Midiglue::make_list<Float>({});
+            amp_out[i]->resize(Midiglue::AUDIO_VEC_SIZE);
+        }
+    }
+
+}

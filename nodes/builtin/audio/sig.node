@@ -1,0 +1,30 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Any : Audio Processing Trigger
+input Number : Set value
+output Signal : Samples
+
+<Description>
+Float values for use in signal processing networks.
+Creates a new FloatList for output.
+
+<Parameter>
+parameter Value = 0.0 : Default value
+
+<Setup>
+${this}( &(Midiglue::__bang) , Midiglue::SETUP );
+
+<Code>
+static float value = ${Value};
+static FloatList output{Midiglue::init_default<FloatList>()};
+if(@in0){
+    std::fill(output->begin(), output->end(), value);
+    out0 = output;
+}else if (@in1){
+    value = in1;
+}else if (@setup){
+    output->resize(Midiglue::AUDIO_VEC_SIZE);
+}

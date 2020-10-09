@@ -1,0 +1,29 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Signal : Frequency
+output Signal : Samples
+
+<Description>
+Sin wave oscillator.
+
+<Code>
+static Float phase = 0.0f; // 0.0f -> 1.0f
+float* input_buf = in0->data(); // frequency
+static q31_t qbuf[Midiglue::AUDIO_VEC_SIZE];
+if (@in0){
+    float tmp;
+    for (uint32_t i = 0; i < in0->size(); ++i){
+        phase = std::modf(phase + input_buf[i] / Midiglue::AUDIO_SAMPLE_RATE, &tmp);
+        if (phase < 0.0) phase += 1.0; // Measures against negative frequency
+        input_buf[i] = phase;
+    }
+    arm_float_to_q31(input_buf, qbuf, Midiglue::AUDIO_VEC_SIZE);
+    for (uint32_t i = 0; i < in0->size(); ++i){
+        qbuf[i] = arm_sin_q31(qbuf[i]);
+    }
+    arm_q31_to_float(qbuf, input_buf, Midiglue::AUDIO_VEC_SIZE);
+    out0 = in0;
+}

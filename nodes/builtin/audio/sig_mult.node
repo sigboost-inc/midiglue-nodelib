@@ -1,0 +1,37 @@
+<Comment>
+Copyright (c) 2018-2020, sigboost, inc., All Rights Reserved.
+This file is licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.
+
+<I/O>
+input Signal : Left operand
+input Signal : Right operand
+output Signal : Result
+
+<Description>
+Calculate Left + Right.
+Calculation is performed after the two data are gathered.
+The FloatList on the left input is used for output.
+
+<Code>
+static FloatList l{Midiglue::init_default<FloatList>()};
+static FloatList r{Midiglue::init_default<FloatList>()};
+static bool l_valid = false;
+static bool r_valid = false;
+
+static auto calc = [&]{
+    if (l_valid && r_valid){
+        arm_mult_f32(l->data(), r->data(), l->data(), l->size());
+        out0 = l;
+        l_valid = r_valid = false;
+    }
+};
+
+if (@in0){
+    l = in0;
+    l_valid = true;
+    calc();
+}else if (@in1){
+    r = in1;
+    r_valid = true;
+    calc();
+}
